@@ -1,26 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --color-primary: #4A6CF7;
-  --color-primary-hover: #3B5AD9;
-  --color-bg-page: #F8FAFF;
+  /* Exact colors from Figma design */
+  --color-primary: #6495ED;
+  --color-primary-hover: #5280D8;
+  --color-bg-page: #F0F5FF;
   --color-bg-card: #FFFFFF;
-  --color-border-card: #E2E8F0;
-  --color-text-primary: #1A1A2E;
-  --color-text-secondary: #64748B;
-  --color-text-muted: #94A3B8;
+  --color-border-card: #C8DCFA;
+  --color-text-primary: #1F2A44;
+  --color-text-secondary: #5A6A8A;
+  --color-text-muted: #8A9ABB;
   --color-success: #10B981;
   --color-warning: #F59E0B;
-  --color-kbd-bg: #F1F5F9;
-  --color-kbd-border: #CBD5E1;
-  --color-tag-bg: #EEF2FF;
-  --color-tag-text: #4A6CF7;
+  --color-kbd-bg: #EAF3FF;
+  --color-kbd-border: #C8DCFA;
+  --color-tag-bg: #EAF3FF;
+  --color-tag-text: #6495ED;
+  --color-avatar-bg: #EAF3FF;
 }
 
 body {
   background-color: var(--color-bg-page);
   color: var(--color-text-primary);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
 }
 
 kbd {

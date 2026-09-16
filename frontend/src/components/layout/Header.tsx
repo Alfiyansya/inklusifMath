@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import Image from "next/image";
 
 interface HeaderProps {
   userName: string;
@@ -11,39 +11,87 @@ interface HeaderProps {
 
 export function Header({ userName, userRole, userInitial, onLogout }: HeaderProps) {
   return (
-    <header className="bg-bg-card border-b border-border-card">
-      <div className="max-w-[1152px] mx-auto px-6 h-[72px] flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-[44px] h-[44px] bg-primary rounded-xl flex items-center justify-center text-white font-bold" aria-hidden="true">
-            IM
-          </div>
-          <div className="flex flex-col">
-            <h1 className="font-bold text-lg text-text-primary leading-tight">Inklusif Math</h1>
-            <p className="text-sm text-text-secondary leading-tight">Platform Matematika Inklusif</p>
+    <header
+      className="bg-white"
+      style={{ borderBottom: "0.8px solid var(--color-border-card)" }}
+    >
+      <div className="max-w-[1152px] mx-auto px-8 py-4 flex items-center justify-between">
+        {/* Logo + Brand */}
+        <div className="flex items-center gap-3">
+          <Image
+            src="/logo.png"
+            alt="Inklusif Math Logo"
+            width={44}
+            height={44}
+            className="rounded-xl"
+          />
+          <div>
+            <p
+              className="text-lg font-extrabold leading-tight"
+              style={{ color: "var(--color-text-primary)", fontFamily: "'Poppins', sans-serif" }}
+            >
+              Inklusif Math
+            </p>
+            <p
+              className="text-xs leading-tight"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              Platform Matematika Inklusif
+            </p>
           </div>
         </div>
-        
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="flex flex-col items-end">
-              <span className="font-semibold text-text-primary text-sm">{userName}</span>
-              <span className="text-xs text-text-secondary">{userRole}</span>
-            </div>
-            <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm" aria-hidden="true">
-              {userInitial}
-            </div>
+
+        {/* User Info + Logout */}
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p
+              className="text-sm font-semibold leading-tight"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              {userName}
+            </p>
+            <p
+              className="text-xs leading-tight"
+              style={{ color: "var(--color-text-secondary)" }}
+            >
+              {userRole}
+            </p>
           </div>
-          <button 
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
+            style={{
+              backgroundColor: "var(--color-avatar-bg)",
+              color: "var(--color-text-primary)",
+            }}
+          >
+            {userInitial}
+          </div>
+          <button
             onClick={onLogout}
-            className="flex items-center gap-2 text-text-secondary hover:text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded-md px-2 py-1"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+            style={{
+              border: "0.8px solid var(--color-border-card)",
+              color: "var(--color-text-secondary)",
+            }}
             aria-label="Keluar dari akun"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 15 15"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                d="M5.625 13.125H3.125C2.79348 13.125 2.47554 12.9933 2.24112 12.7589C2.0067 12.5245 1.875 12.2065 1.875 11.875V3.125C1.875 2.79348 2.0067 2.47554 2.24112 2.24112C2.47554 2.0067 2.79348 1.875 3.125 1.875H5.625M10 10.625L13.125 7.5M13.125 7.5L10 4.375M13.125 7.5H5.625"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
-            <span className="text-sm font-medium">Keluar</span>
+            Keluar
           </button>
         </div>
       </div>
