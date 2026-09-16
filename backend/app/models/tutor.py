@@ -5,7 +5,7 @@ Tutor-related models: TutorSession, TutorMessage.
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -30,9 +30,13 @@ class TutorSession(Base):
         String(100), nullable=True
     )
     started_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(timezone.utc), server_default=func.now()
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
     )
-    ended_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    ended_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # Relationships
     student = relationship("User", back_populates="tutor_sessions")
@@ -57,7 +61,9 @@ class TutorMessage(Base):
     role: Mapped[str] = mapped_column(String(10), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(timezone.utc), server_default=func.now()
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        server_default=func.now(),
     )
 
     # Relationships

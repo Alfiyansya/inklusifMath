@@ -3,6 +3,8 @@ Database engine and session configuration.
 Uses SQLAlchemy 2.0 async with PostgreSQL via asyncpg.
 """
 
+from collections.abc import AsyncGenerator
+
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -30,7 +32,7 @@ class Base(DeclarativeBase):
     pass
 
 
-async def get_db() -> AsyncSession:
+async def get_db() -> AsyncGenerator[AsyncSession]:
     """Dependency that provides an async database session."""
     async with async_session_factory() as session:
         try:
@@ -39,3 +41,4 @@ async def get_db() -> AsyncSession:
         except Exception:
             await session.rollback()
             raise
+
