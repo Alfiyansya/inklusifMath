@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_role
 from app.core.rate_limiter import limiter
 from app.schemas.tutor import TutorAskRequest, TutorAskResponse
 from app.services import tutor_service as svc
@@ -31,7 +31,7 @@ router = APIRouter()
 async def ask_tutor(
     request: Request,
     body: TutorAskRequest,
-    current_user: Annotated[dict, Depends(get_current_user)],
+    current_user: Annotated[dict, Depends(require_role("student", "admin"))],
     db: AsyncSession = Depends(get_db),
 ):
     """

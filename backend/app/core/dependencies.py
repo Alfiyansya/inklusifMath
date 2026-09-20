@@ -1,6 +1,6 @@
 """
 FastAPI dependency injection for authentication and authorization.
-Uses Firebase Admin SDK to verify ID tokens.
+Uses Firebase Admin SDK to verify ID tokens and DB lookup for role.
 """
 
 from typing import Annotated
@@ -8,23 +8,24 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from firebase_admin import auth as firebase_auth
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.database import get_db
 from app.core.firebase import verify_firebase_token
+from app.models.user import User
 
 security = HTTPBearer()
 
 
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+    db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """Extract and validate the current user from Firebase ID token."""
+    """Extract and validate the current user from Firebase ID token, then
+    enrich with role and profile data from the database."""
     try:
         decoded = verify_firebase_token(credentials.credentials)
-        return {
-            "user_id": decoded["uid"],
-            "email": decoded.get("email", ""),
-            "firebase_uid": decoded["uid"],
-        }
     except firebase_auth.ExpiredIdTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -41,22 +42,41 @@ async def get_current_user(
             detail="Autentikasi gagal",
         )
 
+    firebase_uid = decoded["uid"]
+
+    # Look up the user in our DB to get the authoritative role
+    result = await db.execute(select(User).where(User.firebase_uid == firebase_uid))
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Pengguna tidak ditemukan dalam sistem",
+        )
+
+    return {
+        "user_id": str(user.id),
+        "email": user.email,
+        "firebase_uid": user.firebase_uid,
+        "role": user.role,
+        "full_name": user.full_name,
+    }
+
 
 def require_role(*roles: str):
     """Dependency factory that restricts access to specific roles.
 
-    Note: Role is stored in our backend DB, not in Firebase token.
-    This dependency requires the caller to also look up the user profile.
+    Role is fetched from DB via get_current_user and strictly validated.
+    Raises 403 if the authenticated user's role is not in the allowed list.
     """
     async def _check_role(
         current_user: Annotated[dict, Depends(get_current_user)],
     ) -> dict:
-        # For role checking, we'd need to look up the user in our DB
-        # This is a placeholder — callers should verify role from DB profile
-        if current_user.get("role") and current_user["role"] not in roles:
+        user_role = current_user.get("role", "")
+        if user_role not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions",
+                detail=f"Akses ditolak: dibutuhkan role {' atau '.join(roles)}",
             )
         return current_user
     return _check_role

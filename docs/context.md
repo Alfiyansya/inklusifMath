@@ -342,13 +342,14 @@ ix_tutor_messages_session_created   (session_id, created_at)        -- chat hist
 | **GET** | **`/api/v1/documents/{id}`** | 60/min | Teacher | Detail + narration 4-bucket progress |
 | POST | `/api/v1/documents/upload` | 10/hr | Teacher | Upload + parse + AI narasi |
 | GET | `/api/v1/documents/{id}/status` | 120/min | Teacher | Parsing status |
+| **GET** | **`/api/v1/documents/{id}/progress`** | 60/min | Teacher | SSE stream parsing progress (ADR-006) |
 | GET | `/api/v1/documents/{id}/narrations` | 60/min | Teacher | Semua MathExpression sorted |
 | PATCH | `/api/v1/narrations/{id}` | 120/hr | Teacher | Edit narasi guru |
 | POST | `/api/v1/documents/{id}/approve` | 20/hr | Teacher | Approve + publish module |
 | GET | `/api/v1/modules` | 60/min | Any | Modul published, siswa listing |
 | GET | `/api/v1/modules/{id}` | 120/min | Any | Detail modul + MathExpression |
 | **POST** | **`/api/v1/modules/{id}/publish`** | 10/hr | Teacher | Toggle is_published (publish/unpublish) |
-| POST | `/api/v1/tutor/ask` | 30/hr | Any | Gemini 2.0 Flash Socratic |
+| POST | `/api/v1/tutor/ask` | 30/hr | Student/Admin | Gemini 2.0 Flash Socratic |
 | POST | `/api/v1/stt/transcribe` | 20/hr | Any | faster-whisper fallback STT |
 
 > **Bold** = endpoints yang baru dibuat di sesi ini (Sept 20, 2026).
@@ -550,19 +551,15 @@ cd backend && alembic upgrade head
 ## 14. Sisa Pekerjaan (Open Items)
 
 ### High Priority
-| Item | Keterangan |
-|------|------------|
-| **Celery Worker** (5.11) | Async processing untuk OCR + AI narasi — saat ini synchronous di request thread (bisa timeout untuk dokumen besar) |
-| **Cloud Storage GCS** (12.3) | File upload ke bucket, bukan disk lokal (tidak skalabel, hilang saat container restart) |
-| **Deployment config** (12.4) | Dockerfile production + docker-compose prod |
-| **SSE Progress** (4.2.5) | Real-time parsing status via Server-Sent Events |
+Semua high-priority item arsitektur (Celery Worker 5.11, GCS Storage 12.3, Deployment Config 12.4, SSE Progress 4.2.5, Granular RBAC 1.12, TutorModal & ModuleReader wiring 3.2.11/12) **telah selesai diimplementasikan**.
 
-### Medium Priority
+### Sisa Pekerjaan Terbuka
 | Item | Keterangan |
 |------|------------|
 | **Math Term Normalization** (5.10) | "satu per dua" → `½` di output tutor |
-| **RBAC granular** (1.12) | `require_role()` sudah ada tapi enforcement belum granular semua endpoint |
-| **PUT /narrations bulk** (4.2.8) | Bulk update semua narasi sekaligus |
+| **PUT /narrations bulk** (4.2.8) | Bulk update semua narasi sekaligus (opsional, saat ini via PATCH per item) |
+| Responsive layout audit (13.3) | Belum diverifikasi di mobile viewport |
+| High-contrast focus indicators (13.4) | WCAG AA visual audit |
 
 ### Low Priority / Nice-to-Have
 | Item | Keterangan |

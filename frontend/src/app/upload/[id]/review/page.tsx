@@ -2,10 +2,12 @@
 
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { NarrationCard } from "@/components/teacher/NarrationCard";
 import { ApiStatusBanner } from "@/components/ui/ApiStatusBanner";
 import { useNarrations } from "@/hooks/useNarrations";
+import { ParsingProgress } from "@/components/ui/ParsingProgress";
+import { fetchDocumentDetail } from "@/lib/api/documents";
 
 // ── Publish Success Screen ────────────────────────────────────────────────────
 
@@ -116,6 +118,25 @@ export default function NarrationReviewPage() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [activeTab, setActiveTab] = useState<"narasi" | "pratinjau">("narasi");
 
+  // Track whether the document has finished parsing
+  const [parsingStatus, setParsingStatus] = useState<string | null>(null);
+
+  // Fetch document parsing_status on mount to decide whether to show progress
+  useEffect(() => {
+    if (!documentId) return;
+    fetchDocumentDetail(documentId)
+      .then((doc) => setParsingStatus(doc.parsingStatus))
+      .catch(() => setParsingStatus("done")); // On error, assume done so we don't block
+  }, [documentId]);
+
+  // Re-fetch document status after SSE completes (called by ParsingProgress)
+  const refetchParsingStatus = useCallback(
+    async (completedStatus: string) => {
+      setParsingStatus(completedStatus);
+    },
+    []
+  );
+
   const {
     narrations,
     documentTitle,
@@ -130,6 +151,10 @@ export default function NarrationReviewPage() {
 
   const approvedCount = narrations.filter((n) => n.isApproved).length;
   const allApproved = remainingCount === 0 && narrations.length > 0;
+
+  // Show parsing progress if status is not yet done/error (and we know the status)
+  const showParsingProgress =
+    parsingStatus !== null && parsingStatus !== "done" && parsingStatus !== "error";
 
   // Publish: save all unsaved, then approve
   const handlePublish = useCallback(async () => {
@@ -230,6 +255,14 @@ export default function NarrationReviewPage() {
         {/* Mock data warning */}
         {isUsingMockData && (
           <ApiStatusBanner context="Narasi menggunakan data contoh — backend tidak tersedia" />
+        )}
+
+        {/* SSE Parsing Progress Indicator */}
+        {showParsingProgress && (
+          <ParsingProgress
+            documentId={documentId}
+            onComplete={refetchParsingStatus}
+          />
         )}
 
         {/* Progress bar */}

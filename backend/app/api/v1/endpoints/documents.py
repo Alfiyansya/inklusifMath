@@ -25,12 +25,43 @@ Rate limits (TDD Section 1.11):
 
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 import uuid
-from typing import Annotated
+from typing import Annotated, AsyncGenerator
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+
+try:
+    from sse_starlette.sse import EventSourceResponse
+except ImportError:  # pragma: no cover — sse-starlette not yet installed
+    # Thin compatibility shim so the endpoint can be imported before the library
+    # is installed (e.g. during unit tests that never trigger the streaming loop).
+    class EventSourceResponse(StreamingResponse):  # type: ignore[no-redef]
+        """Fallback SSE response using StreamingResponse with text/event-stream."""
+
+        def __init__(self, content: AsyncGenerator, **kwargs):  # type: ignore[override]
+            async def _wrap():
+                async for chunk in content:
+                    if isinstance(chunk, dict):
+                        data = chunk.get("data", "")
+                        event = chunk.get("event", "")
+                        prefix = f"event: {event}\n" if event else ""
+                        yield f"{prefix}data: {data}\n\n".encode()
+                    else:
+                        yield f"data: {chunk}\n\n".encode()
+
+            super().__init__(
+                content=_wrap(),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "X-Accel-Buffering": "no",
+                },
+            )
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_role
@@ -40,6 +71,7 @@ from app.schemas.document import (
     DocumentDetailResponse,
     DocumentListItem,
     DocumentListResponse,
+    DocumentProgressEvent,
     DocumentStatusResponse,
     DocumentUploadResponse,
     MathExpressionResponse,
@@ -128,6 +160,118 @@ async def list_documents(
         limit=limit,
         offset=offset,
     )
+
+
+# ── Progress helpers ──────────────────────────────────────────────────────────
+
+#: Human-readable status messages in Bahasa Indonesia
+_PROGRESS_MESSAGES: dict[str, str] = {
+    "queued": "Dokumen dalam antrian pemrosesan…",
+    "processing": "Dokumen sedang diproses…",
+    "done": "Dokumen berhasil diproses.",
+    "error": "Terjadi kesalahan saat memproses dokumen.",
+}
+
+#: Progress percentage for each status (0-100)
+_PROGRESS_MAP: dict[str, int] = {
+    "queued": 10,
+    "processing": 50,
+    "done": 100,
+    "error": 0,
+}
+
+_TERMINAL_STATUSES = {"done", "error"}
+
+
+def _make_progress_event(doc_id: str, parsing_status: str) -> str:
+    """Serialise a DocumentProgressEvent to a JSON string for the SSE data field."""
+    progress = _PROGRESS_MAP.get(parsing_status, 0)
+    message = _PROGRESS_MESSAGES.get(parsing_status, "Status tidak diketahui.")
+    event = DocumentProgressEvent(
+        status=parsing_status,
+        progress=progress,
+        message=message,
+        document_id=doc_id,
+    )
+    return event.model_dump_json()
+
+
+# ── GET /documents/{document_id}/progress (SSE) ───────────────────────────────
+
+@router.get(
+    "/{document_id}/progress",
+    summary="SSE stream for document parsing progress",
+    response_class=EventSourceResponse,
+)
+@limiter.limit("60/minute")
+async def stream_document_progress(
+    request: Request,
+    document_id: uuid.UUID,
+    current_user: Annotated[dict, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Open a Server-Sent Events stream that polls document parsing status every 2 s.
+
+    - Emits `{"status": …, "progress": 0-100, "message": …, "document_id": …}` events.
+    - Stops automatically when status reaches 'done' or 'error'.
+    - Stops after 60 iterations (~2 minutes) as a safety timeout.
+    - Returns 403 if the authenticated user is not the document owner.
+    - Returns 404 if the document does not exist.
+
+    Progress mapping:
+      queued=10, processing=50, done=100, error=0
+    """
+    firebase_uid = current_user["firebase_uid"]
+
+    # ── Initial ownership check (404 / 403 before opening the stream) ──
+    # First check existence without uid filter, then verify ownership.
+    doc_exists = await svc.get_document_by_id(db, document_id)
+    if doc_exists is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dokumen tidak ditemukan.",
+        )
+
+    doc_owned = await svc.get_document_by_id(db, document_id, firebase_uid)
+    if doc_owned is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Anda tidak memiliki izin untuk dokumen ini.",
+        )
+
+    async def _event_generator() -> AsyncGenerator[dict, None]:
+        _MAX_ITERATIONS = 60
+        _POLL_INTERVAL = 2  # seconds
+
+        for _ in range(_MAX_ITERATIONS):
+            if await request.is_disconnected():
+                logger.info("SSE client disconnected for doc %s", document_id)
+                return
+
+            # Re-fetch from DB each iteration (avoid stale session cache)
+            current_doc = await svc.get_document_by_id(db, document_id, firebase_uid)
+            if current_doc is None:
+                return
+
+            parsing_status = current_doc.parsing_status
+            yield {
+                "data": _make_progress_event(str(document_id), parsing_status),
+            }
+
+            if parsing_status in _TERMINAL_STATUSES:
+                return
+
+            await asyncio.sleep(_POLL_INTERVAL)
+
+        # Timeout — emit final event with last known status
+        final_doc = await svc.get_document_by_id(db, document_id, firebase_uid)
+        if final_doc:
+            yield {
+                "data": _make_progress_event(str(document_id), final_doc.parsing_status),
+            }
+
+    return EventSourceResponse(_event_generator())
 
 
 # ── GET /documents/{document_id} ──────────────────────────────────────────────

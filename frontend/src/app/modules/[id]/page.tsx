@@ -32,6 +32,8 @@ import { useEffect, useRef, useCallback } from "react";
 import { MathDisplay } from "@/components/math";
 import { ApiStatusBanner } from "@/components/ui/ApiStatusBanner";
 import { useModuleDetail } from "@/hooks/useModuleDetail";
+import { TutorModal } from "@/components/tutor";
+import { useTutor } from "@/hooks/useTutor";
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
@@ -40,6 +42,10 @@ export default function ModuleReaderPage() {
   const moduleId = params.id as string;
   const { module, isLoading, isUsingMockData } = useModuleDetail(moduleId);
   const contentRef = useRef<HTMLDivElement>(null);
+  const tutorButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Tutor AI modal hook (handles Alt+T shortcut internally)
+  const tutor = useTutor({ moduleId });
 
   // J/K keyboard navigation between math formulas
   useEffect(() => {
@@ -277,6 +283,35 @@ export default function ModuleReaderPage() {
           </nav>
         </main>
       </div>
+
+      {/* ── Floating Tutor button ── */}
+      <button
+        ref={tutorButtonRef}
+        onClick={tutor.openModal}
+        aria-label="Buka dialog tutor AI (Alt+T)"
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white transition-transform hover:scale-105 focus-visible:ring-4 focus-visible:ring-offset-2 focus-visible:ring-primary z-30"
+        style={{ backgroundColor: "var(--color-primary)" }}
+      >
+        <span className="text-2xl" aria-hidden="true">🦉</span>
+      </button>
+
+      {/* ── Tutor Sokrates modal ── */}
+      <TutorModal
+        isOpen={tutor.isOpen}
+        onClose={tutor.closeModal}
+        status={tutor.status}
+        messages={tutor.messages}
+        transcript={tutor.transcript}
+        liveAnnouncement={tutor.liveAnnouncement}
+        isSpeechSupported={tutor.isSpeechSupported}
+        isRecorderSupported={tutor.isRecorderSupported}
+        onTranscriptChange={tutor.setTranscript}
+        onStartListening={tutor.startListening}
+        onStopListening={tutor.stopListening}
+        onSubmit={tutor.submitQuestion}
+        onClear={tutor.clearConversation}
+        triggerRef={tutorButtonRef}
+      />
     </div>
   );
 }

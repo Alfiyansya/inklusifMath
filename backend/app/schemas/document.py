@@ -109,3 +109,14 @@ class DocumentDetailResponse(BaseModel):
     updated_at: str
 
     model_config = {"from_attributes": True}
+
+
+# ── SSE progress event ────────────────────────────────────────────────────────
+
+class DocumentProgressEvent(BaseModel):
+    """Payload emitted as a Server-Sent Event during document parsing."""
+
+    status: str       # queued | processing | done | error
+    progress: int     # 0-100
+    message: str      # human-readable status in Bahasa Indonesia
+    document_id: str
