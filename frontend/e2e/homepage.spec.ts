@@ -33,9 +33,13 @@ test.describe("Homepage /", () => {
     await expect(page.locator("h1").first()).toBeVisible();
   });
 
-  test("has Login link", async ({ page }) => {
-    const loginLink = page.getByRole("link", { name: /masuk|login/i });
-    await expect(loginLink).toBeVisible();
+  test("redirects unauthenticated user to /login", async ({ page }) => {
+    await expect(page).toHaveURL(/\/login/);
+  });
+
+  test("has login button", async ({ page }) => {
+    const loginBtn = page.getByRole("button", { name: /masuk|login/i });
+    await expect(loginBtn).toBeVisible();
   });
 
   test("has Register link", async ({ page }) => {
@@ -43,7 +47,11 @@ test.describe("Homepage /", () => {
     await expect(registerLink).toBeVisible();
   });
 
-  test("login link navigates to /login", async ({ page }) => {
+  test("navigation between register and login works", async ({ page }) => {
+    const registerLink = page.getByRole("link", { name: /daftar|register/i }).first();
+    await registerLink.click();
+    await expect(page).toHaveURL(/\/register/);
+
     const loginLink = page.getByRole("link", { name: /masuk|login/i }).first();
     await loginLink.click();
     await expect(page).toHaveURL(/\/login/);

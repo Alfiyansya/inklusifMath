@@ -18,6 +18,38 @@ from app.models.user import User
 security = HTTPBearer()
 
 
+async def get_firebase_user(
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+) -> dict:
+    """Extract and validate the Firebase ID token without requiring a DB profile.
+
+    Used during registration (create_profile) and initial profile checks (get_me).
+    """
+    try:
+        decoded = verify_firebase_token(credentials.credentials)
+    except firebase_auth.ExpiredIdTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token sudah kedaluwarsa",
+        )
+    except firebase_auth.InvalidIdTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token tidak valid",
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Autentikasi gagal",
+        )
+
+    return {
+        "user_id": decoded["uid"],
+        "email": decoded.get("email", ""),
+        "firebase_uid": decoded["uid"],
+    }
+
+
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
     db: AsyncSession = Depends(get_db),

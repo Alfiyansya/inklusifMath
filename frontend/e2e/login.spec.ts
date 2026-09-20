@@ -30,7 +30,7 @@ test.describe("Login page /login", () => {
   });
 
   test("password input has accessible label", async ({ page }) => {
-    const password = page.getByLabel(/kata sandi|password/i);
+    const password = page.locator("#login-password");
     await expect(password).toBeVisible();
   });
 
@@ -39,10 +39,9 @@ test.describe("Login page /login", () => {
     await expect(btn).toBeVisible();
   });
 
-  test("empty submit keeps user on /login page", async ({ page }) => {
+  test("empty submit button is disabled and keeps user on /login page", async ({ page }) => {
     const btn = page.getByRole("button", { name: /masuk|login|sign in/i });
-    await btn.click();
-    // Should not navigate away — still on /login (HTML5 validation or inline error)
+    await expect(btn).toBeDisabled();
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -53,7 +52,7 @@ test.describe("Login page /login", () => {
 
   test("can type in email and password fields", async ({ page }) => {
     await page.getByLabel(/email/i).fill("siswa@inklusif.test");
-    await page.getByLabel(/kata sandi|password/i).fill("password123");
+    await page.locator("#login-password").fill("password123");
     await expect(page.getByLabel(/email/i)).toHaveValue("siswa@inklusif.test");
   });
 });

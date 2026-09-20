@@ -17,7 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_firebase_user
 from app.core.rate_limiter import limiter
 from app.models.user import User
 from app.schemas.auth import ProfileCreateRequest, UserResponse
@@ -32,7 +32,7 @@ router = APIRouter()
 async def create_profile(
     request: Request,
     body: ProfileCreateRequest,
-    current_user: Annotated[dict, Depends(get_current_user)],
+    current_user: Annotated[dict, Depends(get_firebase_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Create a user profile after Firebase registration.
@@ -80,7 +80,7 @@ async def create_profile(
 @limiter.limit("60/minute")
 async def get_me(
     request: Request,
-    current_user: Annotated[dict, Depends(get_current_user)],
+    current_user: Annotated[dict, Depends(get_firebase_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Get the current user's profile.

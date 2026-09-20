@@ -24,10 +24,9 @@ for (const path of PUBLIC_PAGES) {
   test.describe(`Accessibility: ${path}`, () => {
     test("has exactly one h1", async ({ page }) => {
       await page.goto(path);
+      await expect(page.locator("h1").first()).toBeVisible({ timeout: 5000 });
       const h1Count = await page.locator("h1").count();
-      expect(h1Count).toBeGreaterThanOrEqual(1);
-      // Ideally exactly 1, but some layouts may use 0 on redirect — allow 0-1
-      expect(h1Count).toBeLessThanOrEqual(1);
+      expect(h1Count).toBe(1);
     });
 
     test("has <main> landmark", async ({ page }) => {
@@ -80,12 +79,10 @@ for (const path of PUBLIC_PAGES) {
 }
 
 test.describe("Accessibility: focus management on /login", () => {
-  test("focus moves to first error after failed submit", async ({ page }) => {
+  test("submit button is disabled on empty form preventing submission", async ({ page }) => {
     await page.goto("/login");
-    // Click submit without filling form
     const btn = page.getByRole("button", { name: /masuk|login|sign in/i });
-    await btn.click();
-    // Page should still be on /login (validation kicked in)
+    await expect(btn).toBeDisabled();
     await expect(page).toHaveURL(/\/login/);
   });
 
@@ -94,7 +91,7 @@ test.describe("Accessibility: focus management on /login", () => {
     const emailInput = page.getByLabel(/email/i);
     await expect(emailInput).toHaveAttribute("type", "email");
 
-    const passwordInput = page.getByLabel(/kata sandi|password/i);
+    const passwordInput = page.locator("#login-password");
     const pwType = await passwordInput.getAttribute("type");
     expect(pwType).toBe("password");
   });

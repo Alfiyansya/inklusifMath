@@ -40,8 +40,8 @@ test.describe("Module reader /modules/[id]", () => {
   });
 
   test("renders HTML content from module", async ({ page }) => {
-    // html_content contains "Persamaan Linear"
-    await expect(page.getByText(/Persamaan Linear/i)).toBeVisible({ timeout: 5000 });
+    // html_content contains "Persamaan Linear" heading
+    await expect(page.getByRole("heading", { name: /Persamaan Linear/i })).toBeVisible({ timeout: 5000 });
   });
 
   test("math expression narration is accessible via aria-label or visible text", async ({ page }) => {

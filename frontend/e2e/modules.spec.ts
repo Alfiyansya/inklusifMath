@@ -47,10 +47,11 @@ test.describe("Modules list /modules", () => {
   });
 
   test("each module has a link to its detail page", async ({ page }) => {
-    // Module links should contain the module id in their href
-    const links = page.getByRole("link").filter({ hasText: /Aljabar|Geometri/i });
+    // Module cards provide "Mulai Belajar" link pointing to /modules/[id]
+    const links = page.getByRole("link", { name: /mulai belajar/i });
     const count = await links.count();
     expect(count).toBeGreaterThan(0);
+    await expect(links.first()).toHaveAttribute("href", /\/modules\//);
   });
 
   test("module list is navigable by keyboard", async ({ page }) => {
