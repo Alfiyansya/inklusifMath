@@ -1,0 +1,82 @@
+services:
+  # FastAPI Web Service
+  - type: web
+    name: inklusifmath-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: inklusifmath-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: inklusifmath-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: inklusifmath-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: inklusifmath-redis
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: FIREBASE_PROJECT_ID
+        value: inklusifmath-6d7e9
+      - key: GCLOUD_PROJECT
+        value: inklusifmath-6d7e9
+      - key: GEMINI_API_KEY
+        sync: false
+
+  # Celery Background Worker
+  - type: worker
+    name: inklusifmath-worker
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A app.worker.celery_app worker --loglevel=info --concurrency=2
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: inklusifmath-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: inklusifmath-redis
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: inklusifmath-redis
+          property: connectionString
+      - key: CELERY_RESULT_BACKEND
+        fromService:
+          type: redis
+          name: inklusifmath-redis
+          property: connectionString
+      - key: GEMINI_API_KEY
+        sync: false
+
+  # Redis
+  - type: redis
+    name: inklusifmath-redis
+    plan: free
+    ipAllowList: []
+
+databases:
+  - name: inklusifmath-db
+    databaseName: inklusifmath
+    user: postgres
+    plan: free
