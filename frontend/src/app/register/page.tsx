@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { AuthBranding } from "@/components/auth/AuthBranding";
 import { AuthCard } from "@/components/auth/AuthCard";
+import { LiveRegion } from "@/components/ui/LiveRegion";
 import type { User, UserRole } from "@/types";
 
 type Step = "role" | "form" | "success";
@@ -282,11 +283,15 @@ function RegistrationForm({
         Lengkapi data berikut untuk membuat akun
       </p>
 
+      {/* LiveRegion for assertive screen reader announcement */}
+      <LiveRegion message={error} politeness="assertive" />
+
       {/* Error message */}
       {error && (
         <div
           role="alert"
-          aria-live="polite"
+          aria-live="assertive"
+          aria-atomic="true"
           className="rounded-lg px-4 py-3 mb-6 text-sm"
           style={{
             backgroundColor: "rgba(239, 68, 68, 0.1)",

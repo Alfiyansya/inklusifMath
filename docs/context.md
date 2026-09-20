@@ -553,15 +553,14 @@ cd backend && alembic upgrade head
 ### High Priority
 Semua high-priority item arsitektur (Celery Worker 5.11, GCS Storage 12.3, Deployment Config 12.4, SSE Progress 4.2.5, Granular RBAC 1.12, TutorModal & ModuleReader wiring 3.2.11/12) **telah selesai diimplementasikan**.
 
-### Sisa Pekerjaan Terbuka
-| Item | Keterangan |
-|------|------------|
-| **PUT /narrations bulk** (4.2.8) | Bulk update semua narasi sekaligus (opsional, saat ini via PATCH per item yang lebih granular) |
-| `aria-live` konsisten (6.15) | LiveRegion belum dipakai di semua konteks error form submission |
+### Status Seluruh Fitur
+Semua item arsitektur, frontend, backend, pipeline OCR & AI, aksesibilitas WCAG AA, dan error handling **telah 100% selesai diimplementasikan**.
 
 ### Yang Baru Saja Diselesaikan
 | Item | Keterangan |
 |------|------------|
+| **PUT /narrations bulk** (4.2.8) | ✅ Bulk update narasi per dokumen via `PUT /api/v1/documents/{id}/narrations` & client `updateNarrationsBulk()` (7 tests) |
+| `aria-live` assertive konsisten (6.15) | ✅ Standarisasi `LiveRegion` dengan `role="alert"` & `aria-live="assertive"` di login, register, upload, dan review |
 | Responsive layout audit (13.3) | ✅ Responsivitas penuh mobile (320px–480px), tablet, desktop: flex-col, 1-col grids, responsive padding |
 | High-contrast focus indicators (13.4) | ✅ Standar WCAG 2.2 AA (Criterion 2.4.11/2.4.12) — Blue 700 (#1D4ED8, 7.0:1 on white), 3px solid outline, 2px offset |
 | Math Term Normalization Layer (5.10) | ✅ Normalisasi STT suara siswa di backend (`stt_normalizer.py`) & frontend (`mathNormalizer.ts`) |

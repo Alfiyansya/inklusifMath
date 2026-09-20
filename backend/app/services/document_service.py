@@ -446,6 +446,39 @@ async def update_narration(
     return expr
 
 
+async def update_narrations_bulk(
+    db: AsyncSession,
+    document_id: uuid.UUID,
+    items: list[dict],
+    teacher_firebase_uid: str,
+) -> tuple[Document | None, list[MathExpression]]:
+    """
+    Bulk update teacher_narration on multiple MathExpressions belonging to a document.
+    Verifies document ownership via teacher_firebase_uid.
+    Sets status='reviewed' on updated expressions.
+    Returns (document, list_of_updated_expressions) or (None, []) if not found/unauthorized.
+    """
+    doc = await get_document_by_id(db, document_id, teacher_firebase_uid)
+    if doc is None:
+        return None, []
+
+    expr_map = {str(expr.id): expr for expr in doc.math_expressions}
+    updated: list[MathExpression] = []
+
+    for item in items:
+        item_id = str(item["id"])
+        if item_id in expr_map:
+            expr = expr_map[item_id]
+            expr.teacher_narration = item["teacher_narration"]
+            expr.status = "reviewed"
+            updated.append(expr)
+
+    if updated:
+        await db.flush()
+
+    return doc, updated
+
+
 async def approve_and_publish(
     db: AsyncSession,
     document_id: uuid.UUID,

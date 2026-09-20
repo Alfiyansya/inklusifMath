@@ -52,6 +52,21 @@ class NarrationUpdateResponse(BaseModel):
     teacher_narration: str
 
 
+class BulkNarrationItem(BaseModel):
+    id: str
+    teacher_narration: str = Field(min_length=1)
+
+
+class BulkNarrationUpdateRequest(BaseModel):
+    narrations: list[BulkNarrationItem] = Field(min_length=1)
+
+
+class BulkNarrationUpdateResponse(BaseModel):
+    document_id: str
+    updated_count: int
+    narrations: list[NarrationUpdateResponse]
+
+
 class ApproveResponse(BaseModel):
     module_id: str
     document_id: str

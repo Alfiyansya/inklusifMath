@@ -19,6 +19,7 @@ import {
   uploadDocument,
   fetchDocumentNarrations,
   updateNarration,
+  updateNarrationsBulk,
   approveDocument,
   fetchDocumentList,
   fetchDocumentDetail,
@@ -186,6 +187,63 @@ describe("updateNarration", () => {
     expect(options.method).toBe("PATCH");
     const body = JSON.parse(options.body as string);
     expect(body.teacher_narration).toBe("test narration");
+  });
+});
+
+// ── updateNarrationsBulk ──────────────────────────────────────────────────────
+
+describe("updateNarrationsBulk", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn());
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("maps bulk update response correctly", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      makeRes({
+        document_id: "doc-1",
+        updated_count: 2,
+        narrations: [
+          { id: "e1", status: "reviewed", teacher_narration: "narasi 1" },
+          { id: "e2", status: "reviewed", teacher_narration: "narasi 2" },
+        ],
+      })
+    );
+
+    const result = await updateNarrationsBulk("doc-1", [
+      { id: "e1", teacherNarration: "narasi 1" },
+      { id: "e2", teacherNarration: "narasi 2" },
+    ]);
+
+    expect(result.documentId).toBe("doc-1");
+    expect(result.updatedCount).toBe(2);
+    expect(result.narrations).toHaveLength(2);
+    expect(result.narrations[0].id).toBe("e1");
+    expect(result.narrations[0].teacherNarration).toBe("narasi 1");
+    expect(result.narrations[1].id).toBe("e2");
+  });
+
+  it("sends PUT request with JSON payload containing mapped fields", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      makeRes({
+        document_id: "doc-1",
+        updated_count: 1,
+        narrations: [{ id: "e1", status: "reviewed", teacher_narration: "n1" }],
+      })
+    );
+
+    await updateNarrationsBulk("doc-1", [{ id: "e1", teacherNarration: "n1" }]);
+
+    const callArgs = vi.mocked(fetch).mock.calls[0];
+    const url = callArgs[0] as string;
+    const options = callArgs[1] as RequestInit;
+
+    expect(url).toContain("/documents/doc-1/narrations");
+    expect(options.method).toBe("PUT");
+    const body = JSON.parse(options.body as string);
+    expect(body.narrations).toEqual([{ id: "e1", teacher_narration: "n1" }]);
   });
 });
 

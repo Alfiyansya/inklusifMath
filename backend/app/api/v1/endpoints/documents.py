@@ -20,6 +20,7 @@ Rate limits (TDD Section 1.11):
   GET  /{id}/status         — 120/minute (polling-friendly)
   GET  /{id}/narrations     — 60/minute (review page loads)
   PATCH /narrations/{id}    — 120/hour (teacher editing)
+  PUT  /{id}/narrations     — 60/hour  (bulk narration editing)
   POST /{id}/approve        — 20/hour  (publish action)
 """
 
@@ -68,6 +69,9 @@ from app.core.dependencies import get_current_user, require_role
 from app.core.rate_limiter import limiter
 from app.schemas.document import (
     ApproveResponse,
+    BulkNarrationItem,
+    BulkNarrationUpdateRequest,
+    BulkNarrationUpdateResponse,
     DocumentDetailResponse,
     DocumentListItem,
     DocumentListResponse,
@@ -568,6 +572,53 @@ async def update_narration(
         id=str(expr.id),
         status=expr.status,
         teacher_narration=expr.teacher_narration,
+    )
+
+
+# ── PUT /documents/{document_id}/narrations ───────────────────────────────────
+
+@router.put(
+    "/{document_id}/narrations",
+    response_model=BulkNarrationUpdateResponse,
+    summary="Bulk update narrations for a document",
+)
+@limiter.limit("60/hour")
+async def bulk_update_narrations(
+    request: Request,
+    document_id: str,
+    body: BulkNarrationUpdateRequest,
+    current_user: Annotated[dict, Depends(require_role("teacher", "admin"))],
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Bulk update teacher narrations for multiple expressions in a document.
+    Rate limited: 60/hour.
+    """
+    try:
+        doc_uuid = uuid.UUID(document_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dokumen tidak ditemukan.")
+
+    doc, updated_exprs = await svc.update_narrations_bulk(
+        db=db,
+        document_id=doc_uuid,
+        items=[{"id": n.id, "teacher_narration": n.teacher_narration} for n in body.narrations],
+        teacher_firebase_uid=current_user["firebase_uid"],
+    )
+    if doc is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dokumen tidak ditemukan.")
+
+    return BulkNarrationUpdateResponse(
+        document_id=str(doc.id),
+        updated_count=len(updated_exprs),
+        narrations=[
+            NarrationUpdateResponse(
+                id=str(e.id),
+                status=e.status,
+                teacher_narration=e.teacher_narration or "",
+            )
+            for e in updated_exprs
+        ],
     )
 
 

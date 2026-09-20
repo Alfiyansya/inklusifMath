@@ -57,7 +57,7 @@ export function LiveRegion({
   return (
     <div
       ref={regionRef}
-      role="status"
+      role={politeness === "assertive" ? "alert" : "status"}
       aria-live={politeness}
       aria-atomic="true"
       className={className}

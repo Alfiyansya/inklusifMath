@@ -139,6 +139,50 @@ export async function updateNarration(
   };
 }
 
+interface BulkNarrationUpdateApiResponse {
+  document_id: string;
+  updated_count: number;
+  narrations: NarrationUpdateApiResponse[];
+}
+
+export interface BulkNarrationUpdateResult {
+  documentId: string;
+  updatedCount: number;
+  narrations: Array<{
+    id: string;
+    status: string;
+    teacherNarration: string;
+  }>;
+}
+
+export async function updateNarrationsBulk(
+  documentId: string,
+  narrations: Array<{ id: string; teacherNarration: string }>,
+): Promise<BulkNarrationUpdateResult> {
+  const res = await apiRequest<BulkNarrationUpdateApiResponse>(
+    `/documents/${documentId}/narrations`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        narrations: narrations.map((n) => ({
+          id: n.id,
+          teacher_narration: n.teacherNarration,
+        })),
+      }),
+    },
+  );
+
+  return {
+    documentId: res.document_id,
+    updatedCount: res.updated_count,
+    narrations: res.narrations.map((n) => ({
+      id: n.id,
+      status: n.status,
+      teacherNarration: n.teacher_narration,
+    })),
+  };
+}
+
 export async function approveDocument(
   documentId: string,
 ): Promise<ApproveResult> {

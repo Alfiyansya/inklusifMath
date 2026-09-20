@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UploadZone } from "@/components/teacher/UploadZone";
 import { ApiStatusBanner } from "@/components/ui/ApiStatusBanner";
+import { LiveRegion } from "@/components/ui/LiveRegion";
 import { useDocumentUpload } from "@/hooks/useDocumentUpload";
 
 export default function UploadPage() {
@@ -15,6 +16,7 @@ export default function UploadPage() {
     progress,
     statusMessage,
     documentId,
+    error,
     isSimulated,
   } = useDocumentUpload();
 
@@ -52,6 +54,26 @@ export default function UploadPage() {
         <p className="text-text-secondary mb-8 max-w-2xl">
           Sistem AI akan secara otomatis memproses dokumen Anda, mengekstrak semua rumus matematika, dan menghasilkan narasi verbal bahasa Indonesia yang inklusif untuk aksesibilitas pembaca layar (screen reader).
         </p>
+
+        {/* Screen reader announcement for errors */}
+        <LiveRegion message={error ?? ""} politeness="assertive" />
+
+        {/* Error alert box */}
+        {error && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            aria-atomic="true"
+            className="rounded-lg px-4 py-3 mb-6 text-sm"
+            style={{
+              backgroundColor: "rgba(239, 68, 68, 0.1)",
+              color: "#DC2626",
+              border: "1px solid rgba(239, 68, 68, 0.2)",
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         {isSimulated && (
           <ApiStatusBanner context="Proses upload menggunakan simulasi" />

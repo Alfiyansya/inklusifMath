@@ -7,6 +7,7 @@ import { NarrationCard } from "@/components/teacher/NarrationCard";
 import { ApiStatusBanner } from "@/components/ui/ApiStatusBanner";
 import { useNarrations } from "@/hooks/useNarrations";
 import { ParsingProgress } from "@/components/ui/ParsingProgress";
+import { LiveRegion } from "@/components/ui/LiveRegion";
 import { fetchDocumentDetail } from "@/lib/api/documents";
 
 // ── Publish Success Screen ────────────────────────────────────────────────────
@@ -156,9 +157,12 @@ export default function NarrationReviewPage() {
   const showParsingProgress =
     parsingStatus !== null && parsingStatus !== "done" && parsingStatus !== "error";
 
+  const [publishError, setPublishError] = useState<string | null>(null);
+
   // Publish: save all unsaved, then approve
   const handlePublish = useCallback(async () => {
     setIsPublishing(true);
+    setPublishError(null);
     try {
       const result = await approveAll();
       // approveAll returns ApproveResult | undefined (mock returns undefined)
@@ -168,8 +172,12 @@ export default function NarrationReviewPage() {
         // Mock data or no module_id — redirect to modules list
         router.push("/dashboard/student");
       }
-    } catch {
-      // Error handled in hook
+    } catch (err: unknown) {
+      setPublishError(
+        err instanceof Error
+          ? err.message
+          : "Gagal mempublikasikan modul. Silakan coba lagi."
+      );
     } finally {
       setIsPublishing(false);
     }
@@ -251,6 +259,26 @@ export default function NarrationReviewPage() {
             )}
           </button>
         </div>
+
+        {/* Screen reader announcement for publish errors */}
+        <LiveRegion message={publishError ?? ""} politeness="assertive" />
+
+        {/* Error alert box */}
+        {publishError && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            aria-atomic="true"
+            className="rounded-lg px-4 py-3 mb-6 text-sm"
+            style={{
+              backgroundColor: "rgba(239, 68, 68, 0.1)",
+              color: "#DC2626",
+              border: "1px solid rgba(239, 68, 68, 0.2)",
+            }}
+          >
+            {publishError}
+          </div>
+        )}
 
         {/* Mock data warning */}
         {isUsingMockData && (
