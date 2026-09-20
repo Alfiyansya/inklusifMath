@@ -25,7 +25,6 @@ Rate limits (TDD Section 1.11):
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import uuid
 from typing import Annotated
@@ -49,6 +48,8 @@ from app.schemas.document import (
     NarrationUpdateResponse,
 )
 from app.services import document_service as svc
+from app.services.storage import storage
+from app.worker.tasks import process_document
 
 logger = logging.getLogger(__name__)
 
@@ -227,12 +228,12 @@ async def upload_document(
 
     Steps:
     1. Validate MIME + file size
-    2. Save file to disk
-    3. Create Document record (status=processing)
-    4. Parse document (run in thread pool to avoid blocking event loop)
-    5. Save MathExpression records
-    6. Update Document status
-    7. Return 202 with summary
+    2. Read file bytes
+    3. Look up teacher
+    4. Save file to storage (local disk or GCS)
+    5. Create Document record (status=queued)
+    6. Flush to DB so worker can read the record
+    7. Enqueue Celery task (non-blocking) → return 202 immediately
     """
     from app.core.config import settings
 
@@ -278,92 +279,37 @@ async def upload_document(
             detail="Profil guru tidak ditemukan. Daftarkan profil terlebih dahulu.",
         )
 
-    # ── 4. Save file to disk ──
+    # ── 4. Save file to storage (local disk or GCS) ──
     filename = file.filename or f"upload.{file_type}"
-    file_path = await svc.save_upload_file(file_bytes, filename)
+    file_path = await storage.save(file_bytes, filename)
 
-    # ── 5. Create Document record (status=processing) ──
+    # ── 5. Create Document record (status=queued) ──
     doc = await svc.create_document_record(
         db=db,
         teacher_id=teacher.id,
         title=title,
         file_type=file_type,
-        file_path=str(file_path),
-        parsing_status="processing",
+        file_path=file_path,
+        parsing_status="queued",
     )
 
-    # ── 6. Parse document in thread pool (CPU-bound, avoid blocking) ──
-    loop = asyncio.get_running_loop()
-    try:
-        parsed = await loop.run_in_executor(
-            None,
-            svc.parse_document,
-            file_bytes,
-            file_type,
-            title,
-        )
-    except Exception as exc:
-        logger.error("Parse failed for document %s: %s", doc.id, exc)
-        doc.parsing_status = "failed"
-        doc.error_code = "PARSE_001"
-        await db.flush()
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={
-                "error_code": "PARSE_001",
-                "message": "Gagal memproses dokumen. Pastikan file tidak rusak.",
-                "document_id": str(doc.id),
-            },
-        )
+    # ── 6. Flush to DB so worker can read the document ──
+    await db.flush()
 
-    # ── 6b. Run OCR if scanned PDF (pending_ocr) ──
-    parsed = await svc.run_ocr_if_needed(file_bytes, parsed, title)
-
-    # ── 7. Save math expressions ──
-    saved_expressions = await svc.save_math_expressions(db, doc.id, parsed)
-
-    # ── 8. Generate AI narrations (best-effort — does not fail upload) ──
-    ai_count = 0
-    if saved_expressions and settings.GEMINI_API_KEY:
-        try:
-            ai_count = await svc.generate_ai_narrations(db, doc.id, saved_expressions)
-        except Exception as exc:
-            logger.warning(
-                "AI narration step failed for doc %s (non-fatal): %s", doc.id, exc
-            )
-
-    # ── 9. Update document with parse results ──
-    await svc.update_document_after_parse(db, doc, parsed)
+    # ── 7. Enqueue Celery task (async, non-blocking) ──
+    process_document.delay(str(doc.id))
+    logger.info("Queued process_document task for doc %s", doc.id)
 
     # Session commit happens in get_db() on exit
-    logger.info(
-        "Uploaded document %s — %d math expressions, %d AI narrated, ocr_used=%s",
-        doc.id, parsed.math_count, ai_count, parsed.ocr_used,
-    )
-
-    # Build message based on AI narration result
-    if parsed.parse_error:
-        message = "Dokumen diproses dengan peringatan. Periksa narasi secara manual."
-    elif ai_count > 0:
-        message = (
-            f"Dokumen berhasil diproses. {ai_count} ekspresi matematika "
-            f"telah dinarasikan oleh AI dan siap untuk di-review."
-        )
-    elif parsed.math_count > 0 and ai_count == 0:
-        message = (
-            "Dokumen berhasil diproses. Narasi AI tidak tersedia (GEMINI_API_KEY tidak dikonfigurasi). "
-            "Silakan isi narasi secara manual."
-        )
-    else:
-        message = "Dokumen berhasil diproses. Tidak ada ekspresi matematika ditemukan."
+    logger.info("Upload queued: doc %s → Celery worker", doc.id)
 
     return DocumentUploadResponse(
         document_id=str(doc.id),
         title=doc.title,
-        status=doc.parsing_status,
-        message=message,
-        math_expressions_count=parsed.math_count,
-        ocr_used=parsed.ocr_used,
+        status="queued",
+        message="Dokumen berhasil diunggah dan sedang diproses. Periksa status di halaman review.",
+        math_expressions_count=0,
+        ocr_used="none",
     )
 
 

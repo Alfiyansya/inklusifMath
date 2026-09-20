@@ -46,6 +46,14 @@ class Settings(BaseSettings):
     MATHPIX_APP_ID: str = ""
     MATHPIX_APP_KEY: str = ""
 
+    # Celery
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
+
+    # GCS
+    GCS_ENABLED: bool = False
+    GCS_BUCKET_NAME: str = "inklusifmath-uploads"
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 

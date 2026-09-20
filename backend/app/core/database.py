@@ -26,6 +26,9 @@ async_session_factory = async_sessionmaker(
     expire_on_commit=False,
 )
 
+# Alias used by Celery worker (same factory, explicit name for clarity)
+async_session_maker = async_session_factory
+
 
 class Base(DeclarativeBase):
     """Base class for all SQLAlchemy models."""

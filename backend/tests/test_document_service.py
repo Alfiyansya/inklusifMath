@@ -271,10 +271,8 @@ class TestUploadEndpoint:
         fake_doc = MagicMock()
         fake_doc.id = uuid.uuid4()
         fake_doc.title = "Test DOCX"
-        fake_doc.parsing_status = "parsed"
+        fake_doc.parsing_status = "queued"
         fake_doc.ocr_used = "none"
-
-        fake_parsed = _make_parsed_doc(2)
 
         app = _make_test_app()
 
@@ -292,17 +290,16 @@ class TestUploadEndpoint:
         with (
             patch.object(doc_ep, "svc") as mock_svc,
             patch("app.api.v1.endpoints.documents.require_role") as mock_role,
+            patch("app.api.v1.endpoints.documents.storage") as mock_storage,
+            patch("app.api.v1.endpoints.documents.process_document") as mock_task,
         ):
             mock_role.return_value = lambda: self._mock_user()
 
             mock_svc.get_file_type.return_value = "docx"
             mock_svc.get_user_by_firebase_uid = AsyncMock(return_value=fake_teacher)
-            mock_svc.save_upload_file = AsyncMock(return_value="/uploads/test.docx")
             mock_svc.create_document_record = AsyncMock(return_value=fake_doc)
-            mock_svc.parse_document.return_value = fake_parsed
-            mock_svc.run_ocr_if_needed = AsyncMock(return_value=fake_parsed)
-            mock_svc.save_math_expressions = AsyncMock(return_value=[])
-            mock_svc.update_document_after_parse = AsyncMock(return_value=fake_doc)
+            mock_storage.save = AsyncMock(return_value="/uploads/test.docx")
+            mock_task.delay = MagicMock()
 
             client = TestClient(app, raise_server_exceptions=False)
             docx_bytes = _make_docx_bytes()
@@ -313,8 +310,7 @@ class TestUploadEndpoint:
                 data={"title": "Test DOCX"},
                 headers={"Authorization": "Bearer fake-token"},
             )
-            # 422/403 expected since require_role isn't properly overridden in TestClient
-            # but we verify no 500 and service layer parsed without crash
+            # 202 (or 403 if auth mock incomplete) — must not be 500
             assert response.status_code != 500
 
     def test_upload_unsupported_mime_returns_415(self):
