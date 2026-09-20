@@ -556,8 +556,7 @@ Semua high-priority item arsitektur (Celery Worker 5.11, GCS Storage 12.3, Deplo
 ### Sisa Pekerjaan Terbuka
 | Item | Keterangan |
 |------|------------|
-| **Math Term Normalization** (5.10) | "satu per dua" → `½` di output tutor |
-| **PUT /narrations bulk** (4.2.8) | Bulk update semua narasi sekaligus (opsional, saat ini via PATCH per item) |
+| **PUT /narrations bulk** (4.2.8) | Bulk update semua narasi sekaligus (opsional, saat ini via PATCH per item yang lebih granular) |
 | Responsive layout audit (13.3) | Belum diverifikasi di mobile viewport |
 | High-contrast focus indicators (13.4) | WCAG AA visual audit |
 

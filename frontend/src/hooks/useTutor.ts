@@ -23,6 +23,7 @@ import {
   earconResponseReady,
   earconError,
 } from "@/lib/audio/earcon";
+import { normalizeMathTerms } from "@/lib/mathNormalizer";
 import { useGlobalShortcut } from "./useGlobalShortcut";
 
 // ── Web Speech API type declarations ─────────────────────────────────────────
@@ -199,6 +200,7 @@ export function useTutor(options: UseTutorOptions = {}): UseTutorResult {
         earconRecordStop();
         setStatus((prev) => (prev === "listening" ? "idle" : prev));
         setLiveAnnouncement("Rekaman selesai.");
+        setTranscript((prev) => normalizeMathTerms(prev));
       };
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -303,11 +305,13 @@ export function useTutor(options: UseTutorOptions = {}): UseTutorResult {
   // ── Submit question ─────────────────────────────────────────────────────────
 
   const submitQuestion = useCallback(async () => {
-    const question = transcript.trim();
-    if (!question) {
+    const raw = transcript.trim();
+    if (!raw) {
       setLiveAnnouncement("Pertanyaan kosong. Silakan ketik atau rekam pertanyaan.");
       return;
     }
+
+    const question = normalizeMathTerms(raw);
 
     // Stop any active recording
     recognitionRef.current?.stop();

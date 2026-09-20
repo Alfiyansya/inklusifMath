@@ -127,11 +127,15 @@ async def transcribe_audio(
             word_timestamps=False,   # Not needed, saves compute
         )
 
-        # Collect all segment texts
-        full_text = " ".join(seg.text.strip() for seg in segments).strip()
+        # Collect all segment texts and apply math normalization
+        from app.services.math_normalizer import normalize_math_terms
+
+        raw_text = " ".join(seg.text.strip() for seg in segments).strip()
+        full_text = normalize_math_terms(raw_text)
 
         return {
             "transcript": full_text,
+            "raw_transcript": raw_text,
             "language": info.language if hasattr(info, "language") else "id",
             "duration_seconds": getattr(info, "duration", None),
         }

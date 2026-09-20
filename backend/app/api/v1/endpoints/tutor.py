@@ -16,6 +16,7 @@ from app.core.dependencies import get_current_user, require_role
 from app.core.rate_limiter import limiter
 from app.schemas.tutor import TutorAskRequest, TutorAskResponse
 from app.services import tutor_service as svc
+from app.services.math_normalizer import normalize_math_terms
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +53,11 @@ async def ask_tutor(
             },
         )
 
+    # Normalize spoken math terms before passing to Socratic Tutor AI
+    normalized_question = normalize_math_terms(body.transcript_text)
+
     answer_text, follow_up_hint = await svc.ask_tutor(
-        question=body.transcript_text,
+        question=normalized_question,
         module_id=body.module_id,
         context_element_id=body.context_element_id,
     )

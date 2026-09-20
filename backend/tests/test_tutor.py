@@ -161,3 +161,39 @@ class TestAskTutorServiceDirect:
                 context_element_id="e",
             )
             assert "Bagaimana cara menghitung pecahan?" in calls
+
+
+class TestTutorMathNormalization:
+    @pytest.mark.asyncio
+    async def test_endpoint_normalizes_spoken_math(self):
+        """Endpoint should normalize spoken Indonesian math terms before passing to AI."""
+        from app.api.v1.endpoints.tutor import ask_tutor
+        from app.schemas.tutor import TutorAskRequest
+        from starlette.requests import Request
+
+        req = Request(
+            scope={
+                "type": "http",
+                "method": "POST",
+                "path": "/api/v1/tutor/ask",
+                "headers": [],
+                "query_string": b"",
+                "client": ("127.0.0.1", 12345),
+            }
+        )
+        body = TutorAskRequest(
+            module_id="mod-123",
+            context_element_id="formula-1",
+            transcript_text="dua x ditambah tiga sama dengan tujuh",
+        )
+        user = {"user_id": "u1", "role": "student"}
+
+        with patch("app.services.tutor_service.ask_tutor", new_callable=AsyncMock) as mock_svc:
+            mock_svc.return_value = ("Jawaban tutor", "Apa langkah berikutnya?")
+            res = await ask_tutor(request=req, body=body, current_user=user, db=MagicMock())
+
+            assert mock_svc.called
+            called_question = mock_svc.call_args.kwargs["question"]
+            assert called_question == "2x + 3 = 7"
+            assert res.answer_text == "Jawaban tutor"
+
