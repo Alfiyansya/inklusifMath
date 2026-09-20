@@ -1,0 +1,13 @@
+# Nixpacks configuration for InklusifMath backend on Railway / Render
+[phases.setup]
+nixPkgs = ["python312", "pip"]
+aptPkgs = ["libmagic1", "libgl1", "libglib2.0-0"]
+
+[phases.install]
+cmds = [
+  "python3 -m pip install --upgrade pip",
+  "pip install -r requirements.txt"
+]
+
+[start]
+cmd = "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2"
