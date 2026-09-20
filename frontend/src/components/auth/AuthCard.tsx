@@ -13,7 +13,7 @@ export function AuthCard({ children }: { children: ReactNode }) {
         border: "0.8px solid var(--color-border-card)",
       }}
     >
-      <div className="px-10 py-12">{children}</div>
+      <div className="px-5 sm:px-10 py-8 sm:py-12">{children}</div>
     </div>
   );
 }

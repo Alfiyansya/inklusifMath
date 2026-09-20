@@ -32,7 +32,7 @@ export function Header({
       className="bg-white"
       style={{ borderBottom: "0.8px solid var(--color-border-card)" }}
     >
-      <div className="max-w-[1152px] mx-auto px-8 py-4 flex items-center justify-between">
+      <div className="max-w-[1152px] mx-auto px-4 sm:px-8 py-3 sm:py-4 flex items-center justify-between">
         {/* Logo + Brand */}
         <div className="flex items-center gap-3">
           <Image
@@ -92,7 +92,7 @@ export function Header({
               {userName}
             </p>
             <p
-              className="text-xs leading-tight"
+              className="text-xs leading-tight hidden sm:block"
               style={{ color: "var(--color-text-secondary)" }}
             >
               {userRole}

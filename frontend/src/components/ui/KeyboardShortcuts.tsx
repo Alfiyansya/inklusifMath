@@ -9,7 +9,7 @@ export function KeyboardShortcuts() {
 
   return (
     <div
-      className="rounded-xl p-8"
+      className="rounded-xl p-4 sm:p-8"
       style={{
         backgroundColor: "var(--color-bg-page)",
         border: "1px solid var(--color-border-card)",
@@ -21,7 +21,7 @@ export function KeyboardShortcuts() {
       >
         Pintasan Keyboard Global
       </h2>
-      <dl className="grid grid-cols-3 gap-x-8 gap-y-4">
+      <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-x-8 sm:gap-y-4">
         {shortcuts.map((shortcut, index) => (
           <div key={index} className="flex gap-3 items-start">
             <dt>

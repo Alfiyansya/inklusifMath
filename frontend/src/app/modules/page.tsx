@@ -32,7 +32,7 @@ export default function ModulesPage() {
       </a>
 
       {/* Page header */}
-      <header className="bg-white border-b border-border-card px-8 py-4 flex items-center justify-between sticky top-0 z-10">
+      <header className="bg-white border-b border-border-card px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-4">
           <Link
             href="/dashboard/student"
@@ -48,7 +48,7 @@ export default function ModulesPage() {
         </span>
       </header>
 
-      <main className="container max-w-[1152px] mx-auto px-8 py-10" id="main-content">
+      <main className="container max-w-[1152px] mx-auto px-4 sm:px-8 py-6 sm:py-10" id="main-content">
         {/* Page title */}
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-text-primary">
@@ -69,7 +69,7 @@ export default function ModulesPage() {
         {/* Module grid */}
         {isLoading ? (
           <div
-            className="grid grid-cols-2 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-6"
             aria-busy="true"
             aria-label="Memuat daftar modul…"
           >
@@ -95,7 +95,7 @@ export default function ModulesPage() {
         ) : (
           <ul
             id="module-list"
-            className="grid grid-cols-2 gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-6"
             aria-label={`${modules.length} modul tersedia`}
           >
             {modules.map((mod) => (

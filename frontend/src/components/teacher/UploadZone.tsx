@@ -67,10 +67,19 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label="Pilih dokumen DOCX atau PDF untuk diunggah"
       onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className="border-2 border-dashed border-border-card rounded-xl p-12 text-center cursor-pointer hover:border-primary transition-colors flex flex-col items-center justify-center bg-bg-card"
+      className="border-2 border-dashed border-border-card rounded-xl p-6 sm:p-12 text-center cursor-pointer hover:border-primary transition-colors flex flex-col items-center justify-center bg-bg-card focus-visible:ring-2 focus-visible:ring-primary"
     >
       <input
         type="file"

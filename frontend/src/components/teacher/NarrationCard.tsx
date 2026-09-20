@@ -95,7 +95,7 @@ export const NarrationCard: React.FC<NarrationCardProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 divide-x divide-border-card">
+      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border-card">
         {/* ── Left Column: Visual Preview ── */}
         <div className="p-5">
           <p className="uppercase text-xs tracking-wider text-text-muted font-semibold mb-3">

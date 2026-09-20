@@ -35,7 +35,7 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen bg-bg-page">
       {/* Header */}
-      <header className="bg-white border-b border-border-card px-8 py-4 flex items-center justify-between sticky top-0 z-10">
+      <header className="bg-white border-b border-border-card px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-4">
           <Link href="/dashboard" className="text-text-secondary hover:text-primary transition-colors text-sm font-medium">
             &larr; Beranda
@@ -47,7 +47,7 @@ export default function UploadPage() {
       </header>
 
       {/* Main Content */}
-      <main className="container max-w-[1152px] mx-auto px-8 py-8">
+      <main className="container max-w-[1152px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
         <h2 className="text-2xl font-bold mb-4 text-text-primary">Unggah Materi Ajar</h2>
         <p className="text-text-secondary mb-8 max-w-2xl">
           Sistem AI akan secara otomatis memproses dokumen Anda, mengekstrak semua rumus matematika, dan menghasilkan narasi verbal bahasa Indonesia yang inklusif untuk aksesibilitas pembaca layar (screen reader).

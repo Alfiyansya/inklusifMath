@@ -28,7 +28,7 @@ export default function StudentDashboard() {
   ];
 
   return (
-    <div className="max-w-[1152px] mx-auto px-8 py-10">
+    <div className="max-w-[1152px] mx-auto px-4 sm:px-8 py-6 sm:py-10">
       {/* Welcome Card */}
       <section
         className="rounded-2xl p-8 relative overflow-hidden"
@@ -65,7 +65,7 @@ export default function StudentDashboard() {
         <h2 className="text-lg font-bold" style={{ color: "var(--color-text-primary)" }}>
           Progres Belajarmu
         </h2>
-        <div className="grid grid-cols-3 gap-4 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
           <ProgressCard
             current={3}
             total={Math.max(modules.length, 12)}
@@ -97,7 +97,7 @@ export default function StudentDashboard() {
         <h2 className="text-lg font-bold" style={{ color: "var(--color-text-primary)" }}>
           Topik yang Kamu Pelajari
         </h2>
-        <div className="grid grid-cols-4 gap-4 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
           {TOPICS.map((topic) => (
             <div
               key={topic.label}
@@ -126,7 +126,7 @@ export default function StudentDashboard() {
         )}
 
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
@@ -144,7 +144,7 @@ export default function StudentDashboard() {
             <p className="text-sm mt-1">Guru sedang menyiapkan materi untukmu.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             {modules.map((mod) => (
               <div
                 key={mod.id}
@@ -197,7 +197,7 @@ export default function StudentDashboard() {
           <h2 className="text-lg font-bold mb-4" style={{ color: "var(--color-text-primary)" }}>
             Panduan Keyboard
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <ShortcutItem keys="Tab" desc="Pindah ke elemen berikutnya" />
             <ShortcutItem keys="Alt + T" desc="Buka Tutor Sokrates" />
             <ShortcutItem keys="Escape" desc="Tutup dialog" />

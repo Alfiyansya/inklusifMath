@@ -18,6 +18,11 @@
   --color-tag-text: #6495ED;
   --color-avatar-bg: #EAF3FF;
 
+  /* High-contrast focus tokens (WCAG 2.2 AA — min 3:1 against bg & surface) */
+  --color-focus: #1D4ED8; /* Blue 700: 7.0:1 on white, 6.4:1 on #F0F5FF */
+  --color-focus-ring: rgba(29, 78, 216, 0.4);
+  --color-success-text: #047857; /* Emerald 700: 4.8:1 on white */
+
   /* Auth-specific tokens (from Figma auth screens) */
   --color-success-icon-bg: rgba(34, 211, 238, 0.12);
   --color-role-badge-bg: rgba(59, 130, 246, 0.15);
@@ -30,6 +35,23 @@ body {
   background-color: var(--color-bg-page);
   color: var(--color-text-primary);
   font-family: 'Inter', Arial, Helvetica, sans-serif;
+}
+
+/* High-contrast focus indicators — WCAG 2.2 AA (Criterion 2.4.11 / 2.4.12) */
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 kbd {

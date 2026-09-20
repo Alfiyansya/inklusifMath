@@ -209,9 +209,9 @@ export default function NarrationReviewPage() {
     <div className="min-h-screen bg-bg-page">
       <PageHeader documentTitle={documentTitle} />
 
-      <main className="container max-w-[1152px] mx-auto px-8 py-8">
+      <main className="container max-w-[1152px] mx-auto px-4 sm:px-8 py-6 sm:py-8">
         {/* Title + publish button */}
-        <div className="flex justify-between items-start mb-6 gap-4">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-start mb-6 gap-4">
           <div>
             <h2 className="text-2xl font-bold text-text-primary mb-1">
               Tinjau Narasi Verbal

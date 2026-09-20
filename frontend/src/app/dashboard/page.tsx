@@ -14,23 +14,23 @@ export default function TeacherDashboard() {
   const { documents, total: docsTotal, isLoading: docsLoading, isUsingMockData: docsUsingMock } = useDocuments();
 
   return (
-    <div className="max-w-[1152px] mx-auto px-8">
+    <div className="max-w-[1152px] mx-auto px-4 sm:px-8">
       {/* Hero Section */}
-      <section className="py-10">
-        <div className="grid grid-cols-2 gap-16 items-start">
+      <section className="py-8 sm:py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start">
           <div>
-            <h1 className="text-5xl font-bold leading-tight" style={{ color: "var(--color-text-primary)" }}>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight" style={{ color: "var(--color-text-primary)" }}>
               Belajar Matematika<br />
               <span style={{ color: "var(--color-primary)" }}>Tanpa Hambatan</span>
             </h1>
-            <p className="text-lg leading-relaxed mt-4" style={{ color: "var(--color-text-secondary)" }}>
+            <p className="text-base sm:text-lg leading-relaxed mt-4" style={{ color: "var(--color-text-secondary)" }}>
               Platform e-learning inklusif untuk siswa tunanetra dan guru
               matematika. Materi dibaca oleh screen reader bawaan Anda
               — tanpa suara web yang mengganggu, tanpa ambiguitas rumus.
             </p>
             <Link
               href="/upload"
-              className="px-6 py-3 rounded-xl font-bold text-sm text-white mt-8 inline-block transition-colors"
+              className="px-6 py-3 rounded-xl font-bold text-sm text-white mt-6 sm:mt-8 inline-block transition-colors"
               style={{ backgroundColor: "var(--color-primary)" }}
             >
               Unggah Modul →
@@ -44,7 +44,7 @@ export default function TeacherDashboard() {
 
       {/* Stats Section */}
       <section className="py-6">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <StatCard value={String(docsTotal || modules.length)} label="Modul Tersedia" />
           <StatCard value="8" label="Guru Aktif" />
           <StatCard value="137" label="Siswa Terdaftar" />
@@ -76,7 +76,7 @@ export default function TeacherDashboard() {
         )}
 
         {docsLoading ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
@@ -100,7 +100,7 @@ export default function TeacherDashboard() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {documents.map((doc) => {
               const statusColor =
                 doc.parsingStatus === "parsed"
@@ -211,7 +211,7 @@ export default function TeacherDashboard() {
         )}
 
         {modulesLoading ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
@@ -235,7 +235,7 @@ export default function TeacherDashboard() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {modules.map((mod) => (
               <ModuleCard
                 key={mod.id}

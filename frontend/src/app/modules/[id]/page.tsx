@@ -137,7 +137,7 @@ export default function ModuleReaderPage() {
       <ModuleHeader title={module.title} moduleId={moduleId} />
 
       {/* Reader layout: sidebar + content */}
-      <div className="container max-w-[1152px] mx-auto px-8 py-8 flex gap-8">
+      <div className="container max-w-[1152px] mx-auto px-4 sm:px-8 py-6 sm:py-8 flex gap-8">
 
         {/* ── Sidebar: daftar rumus ── */}
         <aside
@@ -479,7 +479,7 @@ function ModuleHeader({
 }) {
   void moduleId; // reserved for breadcrumb or share links
   return (
-    <header className="bg-white border-b border-border-card px-8 py-4 flex items-center justify-between sticky top-0 z-10">
+    <header className="bg-white border-b border-border-card px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-10">
       <div className="flex items-center gap-4">
         <Link
           href="/modules"

@@ -557,15 +557,14 @@ Semua high-priority item arsitektur (Celery Worker 5.11, GCS Storage 12.3, Deplo
 | Item | Keterangan |
 |------|------------|
 | **PUT /narrations bulk** (4.2.8) | Bulk update semua narasi sekaligus (opsional, saat ini via PATCH per item yang lebih granular) |
-| Responsive layout audit (13.3) | Belum diverifikasi di mobile viewport |
-| High-contrast focus indicators (13.4) | WCAG AA visual audit |
+| `aria-live` konsisten (6.15) | LiveRegion belum dipakai di semua konteks error form submission |
 
-### Low Priority / Nice-to-Have
+### Yang Baru Saja Diselesaikan
 | Item | Keterangan |
 |------|------------|
-| Responsive layout audit (13.3) | Belum diverifikasi di mobile viewport |
-| High-contrast focus indicators (13.4) | WCAG AA perlu audit |
-| `aria-live` konsisten (6.15) | LiveRegion belum dipakai di semua konteks error |
+| Responsive layout audit (13.3) | ✅ Responsivitas penuh mobile (320px–480px), tablet, desktop: flex-col, 1-col grids, responsive padding |
+| High-contrast focus indicators (13.4) | ✅ Standar WCAG 2.2 AA (Criterion 2.4.11/2.4.12) — Blue 700 (#1D4ED8, 7.0:1 on white), 3px solid outline, 2px offset |
+| Math Term Normalization Layer (5.10) | ✅ Normalisasi STT suara siswa di backend (`stt_normalizer.py`) & frontend (`mathNormalizer.ts`) |
 
 ---
 
