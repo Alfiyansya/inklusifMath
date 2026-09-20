@@ -166,10 +166,10 @@ Sistem memanfaatkan:
 Sistem dapat bergantung pada:
 - browser modern desktop/mobile,
 - screen reader native pengguna,
-- layanan STT seperti Whisper API atau Vosk Indo,
+- layanan STT: Web Speech API (browser-native, primary) dan faster-whisper (self-hosted, fallback),
 - model AI seperti Gemini 1.5 Pro/Flash,
 - parser dokumen seperti Mammoth.js, python-docx, PyMuPDF, pdfplumber,
-- Baidu OCR sebagai fallback untuk PDF scan/image-based PDF.
+- Google Cloud Vision + Mathpix API sebagai fallback untuk PDF scan/image-based PDF.
 
 ### 5.4 Antarmuka Komunikasi
 Komunikasi client-server harus menggunakan HTTPS. Interaksi AI, OCR, dan parsing eksternal harus melalui API backend yang terkontrol.

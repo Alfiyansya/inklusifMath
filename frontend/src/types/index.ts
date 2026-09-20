@@ -5,12 +5,14 @@
 
 // --- User & Auth ---
 export type UserRole = 'teacher' | 'student' | 'admin';
+export type StudentLevel = 'SD' | 'SMP' | 'SMA';
 
 export interface User {
   id: string;
   email: string;
   role: UserRole;
   fullName: string;
+  studentLevel: StudentLevel | null;
   createdAt: string;
 }
 
@@ -30,6 +32,7 @@ export interface RegisterRequest {
   password: string;
   fullName: string;
   role: UserRole;
+  studentLevel?: StudentLevel;
 }
 
 // --- Document ---

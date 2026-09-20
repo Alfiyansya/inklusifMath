@@ -1,43 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { UploadZone } from "@/components/teacher/UploadZone";
+import { ApiStatusBanner } from "@/components/ui/ApiStatusBanner";
+import { useDocumentUpload } from "@/hooks/useDocumentUpload";
 
 export default function UploadPage() {
   const router = useRouter();
-  const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [statusMessage, setStatusMessage] = useState("");
+  const {
+    upload,
+    isUploading,
+    progress,
+    statusMessage,
+    documentId,
+    isSimulated,
+  } = useDocumentUpload();
 
-  const handleFileSelect = (selectedFile: File) => {
-    setFile(selectedFile);
-    setIsUploading(true);
-    setStatusMessage("Mengunggah berkas...");
-    
-    // Simulate upload progress
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += 10;
-      setProgress(currentProgress);
-      
-      if (currentProgress === 50) {
-        setStatusMessage("Menganalisis konten...");
-      } else if (currentProgress === 80) {
-        setStatusMessage("Mengekstrak rumus matematika...");
-      }
-      
-      if (currentProgress >= 100) {
-        clearInterval(interval);
-        setStatusMessage("Selesai!");
-        setTimeout(() => {
-          router.push(`/upload/123/review`);
-        }, 500);
-      }
-    }, 400);
+  const handleFileSelect = (file: File) => {
+    upload(file);
   };
+
+  // Navigate to review page when upload completes
+  useEffect(() => {
+    if (documentId && progress >= 100) {
+      const timer = setTimeout(() => {
+        router.push(`/upload/${documentId}/review`);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [documentId, progress, router]);
 
   return (
     <div className="min-h-screen bg-bg-page">
@@ -59,12 +52,16 @@ export default function UploadPage() {
         <p className="text-text-secondary mb-8 max-w-2xl">
           Sistem AI akan secara otomatis memproses dokumen Anda, mengekstrak semua rumus matematika, dan menghasilkan narasi verbal bahasa Indonesia yang inklusif untuk aksesibilitas pembaca layar (screen reader).
         </p>
-        
+
+        {isSimulated && (
+          <ApiStatusBanner context="Proses upload menggunakan simulasi" />
+        )}
+
         <UploadZone
           onFileSelect={handleFileSelect}
           isUploading={isUploading}
           progress={progress}
-          fileName={file?.name}
+          fileName={undefined}
           statusMessage={statusMessage}
         />
       </main>

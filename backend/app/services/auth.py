@@ -24,7 +24,8 @@ class AuthService:
         self.db = db
 
     async def register(
-        self, email: str, password: str, full_name: str, role: str
+        self, email: str, password: str, full_name: str, role: str,
+        student_level: str | None = None,
     ) -> User:
         """Register a new user. Raises ValueError if email already exists."""
         # Check if email already exists
@@ -41,6 +42,7 @@ class AuthService:
             password_hash=hash_password(password),
             full_name=full_name,
             role=role,
+            student_level=student_level if role == "student" else None,
         )
         self.db.add(user)
         await self.db.flush()

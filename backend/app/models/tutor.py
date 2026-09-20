@@ -5,7 +5,7 @@ Tutor-related models: TutorSession, TutorMessage.
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -14,6 +14,10 @@ from app.core.database import Base
 
 class TutorSession(Base):
     __tablename__ = "tutor_sessions"
+    __table_args__ = (
+        # Composite: student_id + module_id → session lookup per siswa×modul
+        Index("ix_tutor_sessions_student_module", "student_id", "module_id"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -48,6 +52,10 @@ class TutorSession(Base):
 
 class TutorMessage(Base):
     __tablename__ = "tutor_messages"
+    __table_args__ = (
+        # Composite: session_id + created_at → ordered chat history per session
+        Index("ix_tutor_messages_session_created", "session_id", "created_at"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4

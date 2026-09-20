@@ -59,8 +59,8 @@ InklusifMath Platform menggunakan arsitektur **decoupled frontend-backend** deng
 ┌───────┴───────┐  ┌───────┴───────┐  ┌────────┴──────────────┐
 │  PostgreSQL   │  │    Redis      │  │   External Services   │
 │  16           │  │    7          │  │  - Gemini 2.0 Flash   │
-│  (Cloud SQL)  │  │  (Cache +     │  │  - Whisper API        │
-│               │  │   Queue +     │  │  - Google Cloud STT   │
+│  (Cloud SQL)  │  │  (Cache +     │  │  - faster-whisper     │
+│               │  │   Queue +     │  │    (local fallback)   │
 │               │  │   Rate Limit) │  │  - Google Cloud Vision│
 │               │  │               │  │  - Mathpix API        │
 └───────────────┘  └───────────────┘  └───────────────────────┘
@@ -119,8 +119,8 @@ Monitoring: Sentry + Cloud Monitoring
 | Komponen | Teknologi | Fungsi |
 |----------|-----------|--------|
 | LLM | Gemini 2.0 Flash | Semantic clarifier (narasi matematika) + Socratic tutor |
-| STT Primary | Whisper API (large-v3) | Speech-to-text Bahasa Indonesia (batch/finished) |
-| STT Fallback | Google Cloud STT | Streaming real-time fallback |
+| STT Primary | Web Speech API (Browser Native) | Speech-to-text Bahasa Indonesia — gratis, real-time, tanpa API key |
+| STT Fallback | faster-whisper (self-hosted) | Model Whisper open source di backend — gratis, akurasi tinggi |
 
 ### 3.5 Data & Infrastructure
 
@@ -195,20 +195,32 @@ Monitoring: Sentry + Cloud Monitoring
 
 ---
 
-### ADR-004: Whisper API + Google Cloud STT untuk Speech-to-Text
+### ADR-004: Web Speech API + faster-whisper untuk Speech-to-Text
 
-**Status:** Accepted  
-**Context:** Siswa bertanya via push-to-talk dalam Bahasa Indonesia dengan istilah matematika.  
-**Decision:** Whisper API large-v3 (primary) + Google Cloud STT (fallback).  
+**Status:** Accepted (Revised — menggantikan Whisper API + Google Cloud STT)  
+**Context:** Siswa bertanya via push-to-talk dalam Bahasa Indonesia dengan istilah matematika. Whisper API dan Google Cloud STT berbayar — dibutuhkan solusi **100% gratis** tanpa mengorbankan kualitas.  
+**Decision:** Web Speech API (primary, browser-native) + faster-whisper self-hosted (fallback).  
 **Rationale:**
-1. Whisper large-v3 memiliki WER terbaik untuk Bahasa Indonesia, terutama pada audio noisy.
-2. Google Cloud STT unggul pada streaming/real-time sebagai fallback.
-3. Dual-provider memberi resiliensi — jika satu down, yang lain masih berjalan.
+1. **Web Speech API** sudah tersedia gratis di semua browser Chromium (Chrome, Edge) — target utama pengguna screen reader (NVDA, JAWS) yang mayoritas memakai Chrome.
+2. Web Speech API mendukung locale `id-ID` (Bahasa Indonesia) dengan akurasi ~96% pada audio jernih — cukup untuk kalimat tanya matematika sederhana.
+3. **Latensi sangat rendah** — transkripsi langsung di browser tanpa round-trip ke backend, mendukung target Time-to-Inquire < 8 detik.
+4. **Zero cost** — tidak memerlukan API key, billing, atau server tambahan.
+5. **faster-whisper** (model Whisper open source via CTranslate2) dijalankan di backend sebagai fallback jika:
+   - Browser tidak mendukung Web Speech API (Firefox).
+   - Akurasi Web Speech API tidak memadai pada audio noisy.
+   - Model `small` (int8) cukup untuk Bahasa Indonesia dengan ~1.5 GB disk dan ~2 GB RAM.
 
-**Post-processing:** Buat normalization layer untuk istilah matematika: "satu per dua" → ½, "pangkat dua" → ², dll.
+**Trade-off:**
+- Web Speech API mengirim audio ke server Google untuk diproses (tidak fully offline). Untuk platform pendidikan ini, trade-off ini **acceptable** karena data yang dikirim hanya pertanyaan singkat siswa (bukan data sensitif), dan siswa sudah menggunakan Chrome dengan layanan Google.
+- Web Speech API tidak tersedia di Firefox. Mitigasi: fallback otomatis ke faster-whisper backend endpoint.
+- faster-whisper membutuhkan resource tambahan di backend server (~2 GB RAM). Mitigasi: lazy-load model hanya saat fallback diperlukan.
+
+**Post-processing:** Normalization layer untuk istilah matematika tetap diperlukan: "satu per dua" → ½, "pangkat dua" → ², dll.
 
 **Alternatives Rejected:**
-- Vosk Indo (offline) — WER terlalu tinggi; self-hosted menambah infra complexity.
+- Whisper API (OpenAI) — berbayar, memerlukan API key.
+- Google Cloud STT — berbayar, memerlukan billing account.
+- Vosk Indo (offline) — WER terlalu tinggi untuk Bahasa Indonesia; model resmi belum tersedia.
 
 ---
 
@@ -636,7 +648,7 @@ data: {"step": "complete", "progress": 100, "message": "Selesai"}
 | AI_002 | Clarifier | Gemini API error/down | — | Queue + notifikasi |
 | AI_003 | Tutor | Gemini API timeout | 503 | Pesan fallback |
 | STT_001 | Tutor | Mikrofon tidak diizinkan | — | Client-side: minta izin ulang |
-| STT_002 | Tutor | Whisper gagal transkripsi | 422 | Minta ulang |
+| STT_002 | Tutor | Web Speech API / faster-whisper gagal transkripsi | 422 | Minta ulang; jika Web Speech gagal, fallback ke faster-whisper |
 | STT_003 | Tutor | Transkripsi kosong | 422 | Minta ulang |
 | AUTH_001 | Auth | Token expired | 401 | Client: refresh otomatis |
 | AUTH_002 | Auth | Refresh token expired | 401 | Client: redirect login |
@@ -764,7 +776,7 @@ PDF file
 - Earcon engine (Web Audio API)
 - Accessible modal tutor (React Aria)
 - Push-to-talk (MediaDevices API)
-- STT integration (Whisper API + Google Cloud STT fallback)
+- STT integration (Web Speech API primary + faster-whisper fallback)
 - AI Tutor integration (Gemini, Socratic prompt)
 - Focus management system (save/trap/restore)
 - aria-live region output

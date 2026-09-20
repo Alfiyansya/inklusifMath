@@ -14,6 +14,8 @@ from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
 from app.core.rate_limiter import limiter
+from app.core.firebase import init_firebase
+from app.core.errors import AppError, app_error_handler
 from app.api.v1.router import api_router
 
 
@@ -21,6 +23,7 @@ from app.api.v1.router import api_router
 async def lifespan(app: FastAPI):
     """Application startup and shutdown events."""
     # Startup
+    init_firebase()
     yield
     # Shutdown
 
@@ -38,6 +41,9 @@ app = FastAPI(
 # Rate limiter
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Structured error handler (DOC_xxx, AI_xxx, STT_xxx, etc.)
+app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type]
 
 # CORS
 app.add_middleware(

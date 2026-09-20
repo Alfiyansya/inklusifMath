@@ -501,7 +501,7 @@ Tujuan pendekatan ini adalah agar satu ekspresi matematika tetap dapat dipahami 
 - Langkah 5: hasil OCR masuk kembali ke pipeline parsing struktur dan elemen matematika.
 
 ### 18.4 Speech dan AI yang disebut dokumen sumber
-- Whisper API atau Vosk Indo untuk speech-to-text
+- Web Speech API (browser-native, primary) + faster-whisper (self-hosted, fallback) untuk speech-to-text
 - Gemini 1.5 Pro atau Flash untuk semantic clarifier dan tutor
 
 ---

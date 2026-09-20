@@ -1,15 +1,32 @@
 "use client";
 
 import Image from "next/image";
+import { type RefObject } from "react";
+import type { StudentLevel } from "@/types";
 
 interface HeaderProps {
   userName: string;
   userRole: string;
   userInitial: string;
+  variant?: "teacher" | "student";
+  studentLevel?: StudentLevel | null;
   onLogout?: () => void;
+  /** Called when student clicks "Tanya Tutor" button */
+  onOpenTutor?: () => void;
+  /** Ref attached to the Tanya Tutor button — receives focus when modal closes */
+  tutorTriggerRef?: RefObject<HTMLButtonElement | null>;
 }
 
-export function Header({ userName, userRole, userInitial, onLogout }: HeaderProps) {
+export function Header({
+  userName,
+  userRole,
+  userInitial,
+  variant = "teacher",
+  studentLevel,
+  onLogout,
+  onOpenTutor,
+  tutorTriggerRef,
+}: HeaderProps) {
   return (
     <header
       className="bg-white"
@@ -30,19 +47,43 @@ export function Header({ userName, userRole, userInitial, onLogout }: HeaderProp
               className="text-lg font-extrabold leading-tight"
               style={{ color: "var(--color-text-primary)", fontFamily: "'Poppins', sans-serif" }}
             >
-              Inklusif Math
+              InklusifMath
             </p>
-            <p
-              className="text-xs leading-tight"
-              style={{ color: "var(--color-text-secondary)" }}
-            >
-              Platform Matematika Inklusif
-            </p>
+            {variant === "student" ? (
+              <p
+                className="text-xs leading-tight font-medium"
+                style={{ color: "var(--color-primary)" }}
+              >
+                Siswa {studentLevel ? `· ${studentLevel}` : ""}
+              </p>
+            ) : (
+              <p
+                className="text-xs leading-tight"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
+                Platform Matematika Inklusif
+              </p>
+            )}
           </div>
         </div>
 
-        {/* User Info + Logout */}
+        {/* Right Side */}
         <div className="flex items-center gap-3">
+          {/* Student: Tanya Tutor button */}
+          {variant === "student" && (
+            <button
+              ref={tutorTriggerRef}
+              onClick={onOpenTutor}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "var(--color-primary)" }}
+              aria-label="Buka Tutor Sokrates (Alt+T)"
+            >
+              <span aria-hidden="true">✏️</span>
+              Tanya Tutor
+            </button>
+          )}
+
+          {/* User info */}
           <div className="text-right">
             <p
               className="text-sm font-semibold leading-tight"
@@ -57,6 +98,8 @@ export function Header({ userName, userRole, userInitial, onLogout }: HeaderProp
               {userRole}
             </p>
           </div>
+
+          {/* Avatar */}
           <div
             className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
             style={{
@@ -66,6 +109,8 @@ export function Header({ userName, userRole, userInitial, onLogout }: HeaderProp
           >
             {userInitial}
           </div>
+
+          {/* Logout */}
           <button
             onClick={onLogout}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors"

@@ -5,7 +5,7 @@ Document-related models: Document, MathExpression, LearningModule.
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -14,6 +14,10 @@ from app.core.database import Base
 
 class Document(Base):
     __tablename__ = "documents"
+    __table_args__ = (
+        # Composite: teacher_id + created_at DESC → guru dashboard listing
+        Index("ix_documents_teacher_created", "teacher_id", "created_at"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -54,6 +58,12 @@ class Document(Base):
 
 class MathExpression(Base):
     __tablename__ = "math_expressions"
+    __table_args__ = (
+        # Composite: document_id + position_order → ordered narasi review
+        Index("ix_math_expressions_doc_position", "document_id", "position_order"),
+        # Composite: document_id + status → progress count (publish gate)
+        Index("ix_math_expressions_doc_status", "document_id", "status"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -81,6 +91,10 @@ class MathExpression(Base):
 
 class LearningModule(Base):
     __tablename__ = "learning_modules"
+    __table_args__ = (
+        # Composite: is_published + published_at → student module listing sort
+        Index("ix_learning_modules_published_at", "is_published", "published_at"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4

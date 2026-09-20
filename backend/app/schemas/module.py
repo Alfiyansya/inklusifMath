@@ -22,3 +22,13 @@ class ModuleDetailResponse(BaseModel):
     title: str
     html_content: str
     math_expressions: list[MathExpressionResponse]
+
+
+class ModulePublishRequest(BaseModel):
+    is_published: bool = True
+
+
+class ModulePublishResponse(BaseModel):
+    module_id: str
+    is_published: bool
+    published_at: str | None

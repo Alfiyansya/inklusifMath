@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { SkipLink } from "@/components/ui/SkipLink";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 const inter = Inter({
@@ -25,7 +26,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col" style={{ fontFamily: "'Inter', sans-serif" }}>
         <SkipLink />
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

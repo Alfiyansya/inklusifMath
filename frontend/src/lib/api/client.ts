@@ -1,35 +1,25 @@
 /**
  * InklusifMath API Client
  * Handles all HTTP communication with FastAPI backend.
- * Manages JWT tokens with automatic refresh.
+ * Uses Firebase Auth ID tokens for authentication.
  */
 
-import type { AuthTokens, ApiError } from '@/types';
+import { auth } from "@/lib/firebase";
+import type { ApiError } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
-let accessToken: string | null = null;
-
-export function setAccessToken(token: string | null) {
-  accessToken = token;
-}
-
-export function getAccessToken(): string | null {
-  return accessToken;
-}
-
-async function refreshToken(): Promise<boolean> {
+/**
+ * Get the current Firebase ID token.
+ * Returns null if no user is signed in.
+ */
+async function getIdToken(): Promise<string | null> {
+  const user = auth.currentUser;
+  if (!user) return null;
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include', // sends httpOnly cookie
-    });
-    if (!res.ok) return false;
-    const data: AuthTokens = await res.json();
-    setAccessToken(data.accessToken);
-    return true;
+    return await user.getIdToken();
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -45,23 +35,16 @@ export async function apiRequest<T>(
 
   // Don't set Content-Type for FormData (browser sets boundary automatically)
   if (!(options.body instanceof FormData)) {
-    (headers as Record<string, string>)['Content-Type'] = 'application/json';
+    (headers as Record<string, string>)["Content-Type"] = "application/json";
   }
 
-  if (accessToken) {
-    (headers as Record<string, string>)['Authorization'] = `Bearer ${accessToken}`;
+  // Attach Firebase ID token
+  const token = await getIdToken();
+  if (token) {
+    (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
   }
 
-  let res = await fetch(url, { ...options, headers, credentials: 'include' });
-
-  // If 401, try refresh once
-  if (res.status === 401 && accessToken) {
-    const refreshed = await refreshToken();
-    if (refreshed) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${accessToken}`;
-      res = await fetch(url, { ...options, headers, credentials: 'include' });
-    }
-  }
+  const res = await fetch(url, { ...options, headers, credentials: "include" });
 
   if (!res.ok) {
     const error: ApiError = await res.json().catch(() => ({
@@ -80,6 +63,6 @@ export class ApiRequestError extends Error {
     public errorCode?: string,
   ) {
     super(detail);
-    this.name = 'ApiRequestError';
+    this.name = "ApiRequestError";
   }
 }

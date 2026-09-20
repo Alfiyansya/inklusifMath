@@ -2,25 +2,16 @@
 Pydantic schemas for authentication endpoints.
 """
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 
 
-class RegisterRequest(BaseModel):
-    email: EmailStr
-    password: str = Field(min_length=8, max_length=128)
+class ProfileCreateRequest(BaseModel):
+    """Request to create a user profile after Firebase registration."""
     full_name: str = Field(min_length=1, max_length=255)
     role: str = Field(pattern="^(teacher|student|admin)$")
-
-
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
-
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    expires_in: int
+    student_level: str | None = Field(
+        default=None, pattern="^(SD|SMP|SMA)$"
+    )
 
 
 class UserResponse(BaseModel):
@@ -28,5 +19,7 @@ class UserResponse(BaseModel):
     email: str
     role: str
     full_name: str
+    student_level: str | None = None
+    firebase_uid: str
 
     model_config = {"from_attributes": True}

@@ -17,6 +17,13 @@
   --color-tag-bg: #EAF3FF;
   --color-tag-text: #6495ED;
   --color-avatar-bg: #EAF3FF;
+
+  /* Auth-specific tokens (from Figma auth screens) */
+  --color-success-icon-bg: rgba(34, 211, 238, 0.12);
+  --color-role-badge-bg: rgba(59, 130, 246, 0.15);
+  --color-error: #DC2626;
+  --color-error-bg: rgba(239, 68, 68, 0.1);
+  --color-error-border: rgba(239, 68, 68, 0.2);
 }
 
 body {
