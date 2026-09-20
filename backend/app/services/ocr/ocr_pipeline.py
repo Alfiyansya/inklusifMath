@@ -37,6 +37,8 @@ from dataclasses import dataclass, field
 
 from app.services.ocr.gcv_service import GcvOcrService
 from app.services.ocr.mathpix_service import MathpixService
+from app.services.ocr.pix2tex_service import Pix2TexService
+from app.core.config import settings
 from app.services.parsing.models import (
     BlockType,
     ContentBlock,
@@ -206,7 +208,9 @@ async def run_ocr_pipeline(
     title: str,
     gcv_service: GcvOcrService | None = None,
     mathpix_service: MathpixService | None = None,
+    pix2tex_service: Pix2TexService | None = None,
     include_mathpix: bool = True,
+    math_engine: str | None = None,
 ) -> OcrPipelineResult:
     """
     Run the full OCR pipeline on a scanned PDF.
@@ -216,7 +220,11 @@ async def run_ocr_pipeline(
         title:             Document title (used for ParsedDocument).
         gcv_service:       Injectable GCV service (creates default if None).
         mathpix_service:   Injectable Mathpix service (creates default if None).
-        include_mathpix:   Whether to run Mathpix on detected math images.
+        pix2tex_service:   Injectable Pix2Tex service (creates default if None).
+        include_mathpix:   Whether to run math OCR on detected math images.
+        math_engine:       Engine for math formula recognition:
+                           "pix2tex" (free, default), "mathpix" (paid), "auto".
+                           None → use MATH_OCR_ENGINE from config.
 
     Returns:
         OcrPipelineResult with enriched ParsedDocument.
@@ -225,7 +233,22 @@ async def run_ocr_pipeline(
         OcrPipelineError: If GCV returns no text for any page (total failure).
     """
     gcv = gcv_service or GcvOcrService()
-    mathpix = mathpix_service or MathpixService()
+
+    # Resolve math engine
+    engine = math_engine or settings.MATH_OCR_ENGINE
+    if engine not in ("pix2tex", "mathpix", "auto"):
+        logger.warning("Unknown MATH_OCR_ENGINE '%s', defaulting to 'pix2tex'", engine)
+        engine = "pix2tex"
+
+    # Create math OCR service based on engine choice
+    if engine == "mathpix":
+        math_svc = mathpix_service or MathpixService()
+    elif engine == "pix2tex":
+        math_svc = pix2tex_service or Pix2TexService()
+    else:  # "auto" — try pix2tex first, fallback to mathpix
+        math_svc = pix2tex_service or Pix2TexService()
+
+    logger.info("OCR pipeline: math_engine=%s", engine)
 
     # ── Step 1: GCV text extraction ───────────────────────────────────────────
     logger.info("OCR pipeline: starting GCV extraction for '%s'", title)
@@ -243,12 +266,12 @@ async def run_ocr_pipeline(
     # ── Step 2: Parse OCR'd text into ParsedDocument ──────────────────────────
     parsed = _gcv_text_to_parsed_document(gcv_result.full_text, title)
 
-    # ── Step 3: Mathpix on math image regions (optional) ─────────────────────
+    # ── Step 3: Math formula OCR on image regions (pix2tex or Mathpix) ────────
     math_images_found = 0
     math_images_resolved = 0
     ocr_method = "gcv"
 
-    if include_mathpix and mathpix.is_configured and mathpix.enabled:
+    if include_mathpix and math_svc.is_configured and math_svc.enabled:
         logger.info("OCR pipeline: extracting math image regions")
         image_regions = await asyncio.get_event_loop().run_in_executor(
             None, _extract_math_image_regions, pdf_bytes
@@ -257,15 +280,24 @@ async def run_ocr_pipeline(
 
         if image_regions:
             logger.info(
-                "OCR pipeline: sending %d math images to Mathpix", len(image_regions)
+                "OCR pipeline: sending %d math images to %s", len(image_regions), engine
             )
-            mathpix_results = await mathpix.images_to_latex_batch(image_regions)
+            math_results = await math_svc.images_to_latex_batch(image_regions)
 
-            # Merge Mathpix results: add new MathExpressionResult for each usable LaTeX
+            # "auto" mode: if pix2tex returned nothing usable, try Mathpix fallback
+            if engine == "auto":
+                usable_count = sum(1 for _, r in math_results if r.is_usable)
+                if usable_count == 0 and math_images_found > 0:
+                    mathpix_fallback = mathpix_service or MathpixService()
+                    if mathpix_fallback.is_configured and mathpix_fallback.enabled:
+                        logger.info("OCR pipeline: pix2tex returned 0 usable, trying Mathpix fallback")
+                        math_results = await mathpix_fallback.images_to_latex_batch(image_regions)
+
+            # Merge results: add new MathExpressionResult for each usable LaTeX
             existing_positions = {e.position_order for e in parsed.math_expressions}
             base_pos = max(existing_positions, default=0)
 
-            for _pos, mx_result in mathpix_results:
+            for _pos, mx_result in math_results:
                 if mx_result.is_usable:
                     new_pos = base_pos + 1
                     base_pos = new_pos
@@ -280,7 +312,10 @@ async def run_ocr_pipeline(
                     )
                     math_images_resolved += 1
 
-            ocr_method = "gcv+mathpix" if math_images_resolved > 0 else "gcv_only"
+            engine_label = engine if engine != "auto" else (
+                math_results[0][1].engine if math_results else "pix2tex"
+            )
+            ocr_method = f"gcv+{engine_label}" if math_images_resolved > 0 else "gcv_only"
             parsed.ocr_used = ocr_method
         else:
             ocr_method = "gcv_only"

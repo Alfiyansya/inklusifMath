@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     GOOGLE_CLOUD_VISION_CREDENTIALS: str = ""
     MATHPIX_APP_ID: str = ""
     MATHPIX_APP_KEY: str = ""
+    MATH_OCR_ENGINE: str = "pix2tex"  # "pix2tex" (free) | "mathpix" (paid) | "auto"
 
     # Celery
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"

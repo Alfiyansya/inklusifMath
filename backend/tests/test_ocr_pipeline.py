@@ -401,6 +401,7 @@ class TestRunOcrPipeline:
                 "Kalkulus",
                 gcv_service=mock_gcv,
                 mathpix_service=mock_mathpix,
+                math_engine="mathpix",
             )
 
         assert result.math_images_found == 1
@@ -435,7 +436,8 @@ class TestRunOcrPipeline:
             return_value=[(1, FAKE_PNG)],
         ):
             result = await run_ocr_pipeline(
-                FAKE_PDF, "Doc", gcv_service=mock_gcv, mathpix_service=mock_mathpix
+                FAKE_PDF, "Doc", gcv_service=mock_gcv, mathpix_service=mock_mathpix,
+                math_engine="mathpix",
             )
 
         assert result.math_images_resolved == 0

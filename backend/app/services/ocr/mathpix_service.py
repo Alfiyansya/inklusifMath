@@ -25,37 +25,19 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-from dataclasses import dataclass
 
 import httpx
 
+from app.services.ocr.math_ocr_result import MathOcrResult
+
 logger = logging.getLogger(__name__)
+
+# Backward-compat alias — callers can still use MathpixResult
+MathpixResult = MathOcrResult
 
 _MATHPIX_ENDPOINT = "https://api.mathpix.com/v3/text"
 _MATHPIX_ENABLED = os.getenv("MATHPIX_ENABLED", "true").lower() != "false"
 _MATHPIX_TIMEOUT = 15.0  # seconds
-
-
-@dataclass
-class MathpixResult:
-    """Result from Mathpix API for a single image."""
-
-    latex: str | None
-    """LaTeX string extracted, or None if failed/low confidence."""
-
-    confidence: float
-    """0–1 confidence score from Mathpix."""
-
-    raw_text: str | None
-    """Human-readable text (as an alternative to LaTeX)."""
-
-    error: str | None = None
-    """Error message if the API call failed."""
-
-    @property
-    def is_usable(self) -> bool:
-        """True if we have a LaTeX string and it passes minimum confidence."""
-        return self.latex is not None and self.confidence >= 0.5
 
 
 class MathpixService:
@@ -93,7 +75,7 @@ class MathpixService:
         """
         if not self.enabled:
             logger.debug("Mathpix disabled — skipping")
-            return MathpixResult(latex=None, confidence=0.0, raw_text=None)
+            return MathpixResult(latex=None, confidence=0.0, raw_text=None, engine="mathpix")
 
         if not self.is_configured:
             logger.warning(
@@ -104,6 +86,7 @@ class MathpixService:
                 confidence=0.0,
                 raw_text=None,
                 error="credentials_missing",
+                engine="mathpix",
             )
 
         loop = asyncio.get_event_loop()
@@ -138,12 +121,12 @@ class MathpixService:
         except httpx.TimeoutException:
             logger.warning("Mathpix API timeout after %.1fs", _MATHPIX_TIMEOUT)
             return MathpixResult(
-                latex=None, confidence=0.0, raw_text=None, error="timeout"
+                latex=None, confidence=0.0, raw_text=None, error="timeout", engine="mathpix"
             )
         except Exception as exc:  # noqa: BLE001
             logger.warning("Mathpix API error: %s", exc)
             return MathpixResult(
-                latex=None, confidence=0.0, raw_text=None, error=str(exc)
+                latex=None, confidence=0.0, raw_text=None, error=str(exc), engine="mathpix"
             )
 
         # Parse response
@@ -160,7 +143,7 @@ class MathpixService:
             confidence,
             len(latex) if latex else 0,
         )
-        return MathpixResult(latex=latex, confidence=confidence, raw_text=text)
+        return MathpixResult(latex=latex, confidence=confidence, raw_text=text, engine="mathpix")
 
     async def images_to_latex_batch(
         self,
