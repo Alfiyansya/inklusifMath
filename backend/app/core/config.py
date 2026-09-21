@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     FIREBASE_PROJECT_ID: str = ""
 
     # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: str | list[str] = ["http://localhost:3000"]
 
     # File Upload
     MAX_UPLOAD_SIZE_MB: int = 20
@@ -66,18 +66,22 @@ class Settings(BaseSettings):
             return v.replace("postgresql://", "postgresql+asyncpg://", 1)
         return v
 
-    @field_validator("CORS_ORIGINS", mode="before")
+    @field_validator("CORS_ORIGINS", mode="after")
     @classmethod
     def assemble_cors_origins(cls, v: str | list[str]) -> list[str]:
         if isinstance(v, str):
             v_trimmed = v.strip()
             if v_trimmed.startswith("[") and v_trimmed.endswith("]"):
                 try:
-                    return json.loads(v_trimmed)
+                    parsed = json.loads(v_trimmed)
+                    if isinstance(parsed, list):
+                        return [str(item).strip() for item in parsed if str(item).strip()]
                 except Exception:
                     pass
             return [origin.strip() for origin in v_trimmed.split(",") if origin.strip()]
-        return v
+        if isinstance(v, list):
+            return [str(item).strip() for item in v if str(item).strip()]
+        return ["http://localhost:3000"]
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
